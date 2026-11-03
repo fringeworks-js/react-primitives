@@ -1,0 +1,7 @@
+{
+  "extends": "@fringeworks/dev/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  },
+  "include": ["src", "stories", ".storybook", "globals.d.ts"]
+}
