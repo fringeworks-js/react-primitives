@@ -48,18 +48,58 @@ describe('Radio', () => {
     expect(input.parentElement?.hasAttribute('invalid')).toBe(false);
   });
 
-  it('その他の props は label に、partsProps.input は input に渡す', () => {
-    const ref = createRef<HTMLInputElement>();
-    render(
-      <Radio
-        value={false}
-        className="label"
-        partsProps={{ input: { className: 'input', ref } }}
-      />,
-    );
+  describe('props を渡す要素', () => {
+    it('className・style は label に、それ以外（ref を含む）は input に渡す', () => {
+      const ref = createRef<HTMLInputElement>();
+      render(
+        <Radio
+          value={false}
+          ref={ref}
+          className="label"
+          style={{ color: 'red' }}
+          aria-describedby="note"
+        />,
+      );
 
-    expect(getInput().className).toBe('input');
-    expect(getInput().parentElement?.className).toBe('label');
-    expect(ref.current).toBe(getInput());
+      const input = getInput();
+      expect(input.parentElement?.className).toBe('label');
+      expect(input.parentElement?.style.color).toBe('red');
+      expect(input.hasAttribute('class')).toBe(false);
+      expect(input.getAttribute('aria-describedby')).toBe('note');
+      expect(ref.current).toBe(input);
+    });
+
+    it('partsProps.label は label に、partsProps.input は input に渡す', () => {
+      const rootRef = createRef<HTMLLabelElement>();
+      const inputRef = createRef<HTMLInputElement>();
+      render(
+        <Radio
+          value={false}
+          partsProps={{
+            label: { ref: rootRef, className: 'root' },
+            input: { ref: inputRef, className: 'input' },
+          }}
+        />,
+      );
+
+      expect(getInput().className).toBe('input');
+      expect(rootRef.current?.className).toBe('root');
+      expect(inputRef.current).toBe(getInput());
+    });
+
+    it('onChange を先に呼び、preventDefault されたら通知しない', () => {
+      const onValueChange = vi.fn();
+      render(
+        <Radio
+          value={false}
+          onChange={(event) => event.preventDefault()}
+          onValueChange={onValueChange}
+        />,
+      );
+
+      fireEvent.click(getInput());
+
+      expect(onValueChange).not.toHaveBeenCalled();
+    });
   });
 });

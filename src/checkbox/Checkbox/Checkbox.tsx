@@ -1,70 +1,15 @@
-import { mergePartProps } from '@fringeworks/react-parts-props';
-import {
-  useCombinedRefs,
-  useControllableState,
-} from '@fringeworks/react-utils';
-import { useLayoutEffect, useRef, type ComponentPropsWithRef } from 'react';
-import type { CheckboxProps } from './types';
+import withCheckbox from '../withCheckbox';
 
 /**
  * 値と操作の契約（`value`・`defaultValue`・`onValueChange`）に沿ったチェックボックス
  *
+ * `withCheckbox` で、`<label>`・`<input>` を素の要素で描くようにしたもの。
  * `<label>` の中に `<input type="checkbox">` と `children` を置く。
- * その他の props は `<label>` に渡し、`<input>` には `partsProps.input` で渡す。
+ * 主要素は `<input>` で、`className`・`style` は `<label>` に、それ以外の props（`ref` を含む）は `<input>` に渡す。
+ * `partsProps.label` は `<label>` に、`partsProps.input` は `<input>` に渡し、同じプロパティならトップレベルで受け取ったものより優先する。
+ * 利用者の `onChange` を先に呼び、そこで `event.preventDefault()` されたら値を変えない。
  */
-export default function Checkbox({
-  value,
-  defaultValue,
-  onValueChange,
-  disabled,
-  readOnly,
-  required,
-  invalid,
-  indeterminate,
-  children,
-  partsProps,
-  ...rest
-}: CheckboxProps) {
-  const [checked, setChecked] = useControllableState({
-    value,
-    defaultValue: defaultValue ?? false,
-    onValueChange,
-  });
+const Checkbox = withCheckbox();
+Checkbox.displayName = 'Checkbox';
 
-  // indeterminate は HTML の属性が無く、DOM のプロパティでだけ設定できる
-  const inputRef = useRef<HTMLInputElement>(null);
-  useLayoutEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.indeterminate = indeterminate ?? false;
-    }
-  }, [indeterminate]);
-
-  // ref を mergePartProps に渡すと、レンダリング中に ref を読むものとして lint に指摘されるので、先に合成する
-  const { ref: inputPartRef, ...inputPartProps } = partsProps?.input ?? {};
-  const combinedInputRef = useCombinedRefs(inputRef, inputPartRef);
-
-  return (
-    <label {...rest}>
-      <input
-        {...mergePartProps<ComponentPropsWithRef<'input'>>(
-          {
-            ref: combinedInputRef,
-            type: 'checkbox',
-            checked,
-            disabled,
-            required,
-            'aria-readonly': readOnly || undefined,
-            'aria-invalid': invalid || undefined,
-            onChange: (event) => {
-              if (!readOnly) {
-                setChecked(event.currentTarget.checked);
-              }
-            },
-          },
-          inputPartProps,
-        )}
-      />
-      {children}
-    </label>
-  );
-}
+export default Checkbox;

@@ -3,4 +3,7 @@ export * from './checkbox';
 export * from './collapsible';
 export * from './optionLabel';
 export * from './radio';
+export * from './recordField';
+export * from './switch';
+export * from './table';
 export * from './textInput';

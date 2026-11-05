@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Checkbox from '../Checkbox';
 import type { CheckboxSlotProps } from '../useCheckboxGroup';
+import type { CheckboxGroupContainerSlotProps } from './types';
 import withCheckboxGroup from './withCheckboxGroup';
 
 const CheckboxGroup = withCheckboxGroup({ Checkbox });
@@ -142,5 +143,110 @@ describe('withCheckboxGroup', () => {
     fireEvent.click(screen.getByLabelText('2'));
 
     expect(onValueChange).toHaveBeenCalledExactlyOnceWith([2]);
+  });
+
+  it('組み込んだ入れ物で並べ、入れ物の属性と部品を渡す', () => {
+    const Container = (props: CheckboxGroupContainerSlotProps) => (
+      <section {...props} data-part="container" />
+    );
+    const CustomCheckboxGroup = withCheckboxGroup({ Container, Checkbox });
+    render(
+      <CustomCheckboxGroup
+        options={options}
+        aria-label="果物"
+        className="mine"
+      />,
+    );
+
+    const container = screen.getByRole('group', { name: '果物' });
+    expect(container.tagName).toBe('SECTION');
+    expect(container.dataset.part).toBe('container');
+    expect(container.className).toBe('mine');
+    expect(
+      screen.getAllByRole('checkbox').every((item) => container.contains(item)),
+    ).toBe(true);
+  });
+
+  describe('partsProps', () => {
+    it('組み込んだ Checkbox の props を、partsProps.checkbox（選択肢ごと）・selectAll で渡す', () => {
+      const { container } = render(
+        <CheckboxGroup
+          options={options}
+          showSelectAll
+          partsProps={{
+            checkbox: (option) => ({
+              className: `item-${String(option.value)}`,
+              partsProps: { label: { 'data-value': String(option.value) } },
+            }),
+            selectAll: { className: 'all' },
+          }}
+        />,
+      );
+
+      const labels = [...container.querySelectorAll<HTMLElement>('label')];
+      expect(labels.map((label) => label.className)).toEqual([
+        'all',
+        'item-a',
+        'item-b',
+      ]);
+      expect(labels[1]?.dataset.value).toBe('a');
+    });
+
+    // 口の props に加えて、必須の size を持つチェックボックス（デザインシステムの部品を想定）
+    function SizedCheckbox({
+      size,
+      value,
+      onValueChange,
+      children,
+    }: CheckboxSlotProps & { size: 'small' | 'large' }) {
+      return (
+        <label data-size={size}>
+          <input
+            type="checkbox"
+            checked={value}
+            onChange={(event) => onValueChange(event.target.checked)}
+          />
+          {children}
+        </label>
+      );
+    }
+    const SizedGroup = withCheckboxGroup({ Checkbox: SizedCheckbox });
+
+    it('部品に固有の props を渡せる。必須のものがあれば partsProps も必須になる', () => {
+      const { container } = render(
+        <SizedGroup
+          options={options}
+          partsProps={{
+            checkbox: { size: 'small' },
+            selectAll: { size: 'large' },
+          }}
+        />,
+      );
+      expect(
+        [...container.querySelectorAll<HTMLElement>('label')].map(
+          (label) => label.dataset.size,
+        ),
+      ).toEqual(['small', 'small']);
+
+      const missing = {
+        // @ts-expect-error size を渡す partsProps が無い
+        element: <SizedGroup options={options} />,
+      };
+      const contract: Parameters<typeof CheckboxGroup>[0]['partsProps'] = {
+        // @ts-expect-error 契約の props はグループが決めるので渡せない
+        checkbox: { value: true },
+      };
+      expect(missing.element).toBeDefined();
+      expect(contract).toBeDefined();
+    });
+
+    it('口の props を受け取れない部品は組み込めない', () => {
+      function TextCheckbox(props: { value: string }) {
+        return <span>{props.value}</span>;
+      }
+
+      // @ts-expect-error value が boolean ではない
+      expect(withCheckboxGroup({ Checkbox: TextCheckbox })).toBeDefined();
+    });
   });
 });

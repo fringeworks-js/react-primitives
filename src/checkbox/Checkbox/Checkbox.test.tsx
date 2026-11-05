@@ -86,26 +86,98 @@ describe('Checkbox', () => {
     expect(getInput().indeterminate).toBe(false);
   });
 
-  it('その他の props は label に、partsProps.input は input に渡す', () => {
-    const onChange = vi.fn();
-    const inputRef = createRef<HTMLInputElement>();
-    render(
-      <Checkbox
-        className="extra"
-        data-testid="root"
-        partsProps={{ input: { name: 'fruit', onChange, ref: inputRef } }}
-      />,
-    );
+  describe('props を渡す要素', () => {
+    it('className・style は label に、それ以外（ref を含む）は input に渡す', () => {
+      const ref = createRef<HTMLInputElement>();
+      render(
+        <Checkbox
+          ref={ref}
+          className="extra"
+          style={{ color: 'red' }}
+          id="agree"
+          name="agree"
+          aria-describedby="note"
+          data-testid="input"
+        />,
+      );
 
-    const root = screen.getByTestId('root');
-    expect(root.tagName).toBe('LABEL');
-    expect(root.className).toBe('extra');
-    expect(getInput().name).toBe('fruit');
-    expect(inputRef.current).toBe(getInput());
+      const input = getInput();
+      const label = input.parentElement!;
+      expect(label.className).toBe('extra');
+      expect(label.style.color).toBe('red');
+      expect(input.hasAttribute('class')).toBe(false);
+      expect(ref.current).toBe(input);
+      expect(input.id).toBe('agree');
+      expect(input.name).toBe('agree');
+      expect(input.getAttribute('aria-describedby')).toBe('note');
+      expect(screen.getByTestId('input')).toBe(input);
+    });
 
-    fireEvent.click(getInput());
+    it('aria-labelledby で外の要素を名前にできる', () => {
+      render(
+        <>
+          <span id="heading">同意</span>
+          <Checkbox aria-labelledby="heading" />
+        </>,
+      );
 
-    expect(onChange).toHaveBeenCalledOnce();
-    expect(getInput().checked).toBe(true);
+      expect(screen.getByRole('checkbox', { name: '同意' })).toBe(getInput());
+    });
+
+    it('partsProps.label は label に、partsProps.input は input に渡し、ルートの props より優先する', () => {
+      const rootRef = createRef<HTMLLabelElement>();
+      const ref = createRef<HTMLInputElement>();
+      const inputRef = createRef<HTMLInputElement>();
+      render(
+        <Checkbox
+          ref={ref}
+          className="a"
+          name="top"
+          partsProps={{
+            label: { ref: rootRef, className: 'b' },
+            input: { ref: inputRef, className: 'c', name: 'part' },
+          }}
+        />,
+      );
+
+      const root = getInput().parentElement!;
+      expect(root.tagName).toBe('LABEL');
+      expect(root.className).toBe('a b');
+      expect(rootRef.current).toBe(root);
+      expect(getInput().className).toBe('c');
+      expect(getInput().name).toBe('part');
+      expect(ref.current).toBe(getInput());
+      expect(inputRef.current).toBe(getInput());
+    });
+
+    it('onChange を先に呼び、preventDefault されたら値を変えない', () => {
+      const onValueChange = vi.fn();
+      const onChange = vi.fn((event: { preventDefault: () => void }) =>
+        event.preventDefault(),
+      );
+      render(<Checkbox onChange={onChange} onValueChange={onValueChange} />);
+
+      fireEvent.click(getInput());
+
+      expect(onChange).toHaveBeenCalledOnce();
+      expect(onValueChange).not.toHaveBeenCalled();
+    });
+
+    it('ルートと partsProps.input の onChange を両方呼ぶ', () => {
+      const onChange = vi.fn();
+      const onPartChange = vi.fn();
+      render(
+        <Checkbox
+          onChange={onChange}
+          partsProps={{ input: { onChange: onPartChange } }}
+        />,
+      );
+
+      fireEvent.click(getInput());
+
+      expect(onChange).toHaveBeenCalledOnce();
+      expect(onPartChange).toHaveBeenCalledOnce();
+      expect(getInput().checked).toBe(true);
+    });
   });
 });

@@ -4,37 +4,14 @@ import type {
   ReadOnlyProps,
   RequiredProps,
 } from '@fringeworks/react-contract';
-import type { WithPartsProps } from '@fringeworks/react-parts-props';
-import type { ComponentPropsWithRef, ReactNode } from 'react';
+import type { ChangeEventHandler } from 'react';
 
 /**
- * `Radio` が自分で設定する `<input>` の属性
- */
-type ControlledInputKeys =
-  | 'type'
-  | 'name'
-  | 'value'
-  | 'defaultValue'
-  | 'checked'
-  | 'defaultChecked'
-  | 'disabled'
-  | 'readOnly'
-  | 'required'
-  | 'children';
-
-/**
- * `Radio` のプロパティ
+ * `useRadio` が受け取る props
  *
  * ラジオボタンは単独では使わず、グループ（`withRadioGroup`）に組み込むので、制御だけを受け付ける。
  */
-export type RadioProps = WithPartsProps<{
-  input: Omit<ComponentPropsWithRef<'input'>, ControlledInputKeys>;
-}> &
-  Omit<
-    ComponentPropsWithRef<'label'>,
-    'children' | 'defaultValue' | 'defaultChecked'
-  > &
-  DisabledProps &
+export type UseRadioProps = DisabledProps &
   ReadOnlyProps &
   RequiredProps &
   InvalidProps & {
@@ -52,9 +29,25 @@ export type RadioProps = WithPartsProps<{
      * グループの名前。同じ名前のラジオボタンが1つのグループとして、Tab キー・矢印キーで動く
      */
     name?: string;
-
-    /**
-     * ラジオボタンの横に表示する内容
-     */
-    children?: ReactNode;
   };
+
+/**
+ * `<input>` に渡す props
+ */
+export type RadioInputProps = {
+  type: 'radio';
+  name?: string;
+  checked: boolean;
+  disabled?: boolean;
+  required?: boolean;
+  onChange: ChangeEventHandler<HTMLInputElement>;
+};
+
+export type UseRadioResult = {
+  /**
+   * `<input>` に渡す props を作る。利用者の `onChange` を渡すと、部品の処理の前に呼ぶ
+   */
+  getInputProps: (handlers?: {
+    onChange?: ChangeEventHandler<HTMLInputElement>;
+  }) => RadioInputProps;
+};

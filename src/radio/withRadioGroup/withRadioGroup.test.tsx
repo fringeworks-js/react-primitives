@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Radio from '../Radio';
 import type { RadioSlotProps } from '../useRadioGroup';
+import type { RadioGroupContainerSlotProps } from './types';
 import withRadioGroup from './withRadioGroup';
 
 const RadioGroup = withRadioGroup({ Radio });
@@ -92,5 +93,38 @@ describe('withRadioGroup', () => {
 
     expect(onValueChange).toHaveBeenCalledExactlyOnceWith('b');
     expect(AppRadioGroup.displayName).toBe('withRadioGroup(AppRadio)');
+  });
+
+  it('組み込んだ入れ物で並べ、入れ物の属性と部品を渡す', () => {
+    const Container = (props: RadioGroupContainerSlotProps) => (
+      <section {...props} data-part="container" />
+    );
+    const CustomRadioGroup = withRadioGroup({ Container, Radio });
+    render(
+      <CustomRadioGroup options={options} aria-label="果物" className="mine" />,
+    );
+
+    const container = screen.getByRole('radiogroup', { name: '果物' });
+    expect(container.tagName).toBe('SECTION');
+    expect(container.dataset.part).toBe('container');
+    expect(container.className).toBe('mine');
+    expect(
+      screen.getAllByRole('radio').every((item) => container.contains(item)),
+    ).toBe(true);
+  });
+
+  it('組み込んだ Radio の props を、partsProps.radio（選択肢ごと）で渡す', () => {
+    const { container } = render(
+      <RadioGroup
+        options={options}
+        partsProps={{
+          radio: (option) => ({ className: `item-${String(option.value)}` }),
+        }}
+      />,
+    );
+
+    expect(
+      [...container.querySelectorAll('label')].map((label) => label.className),
+    ).toEqual(options.map((option) => `item-${option.value}`));
   });
 });

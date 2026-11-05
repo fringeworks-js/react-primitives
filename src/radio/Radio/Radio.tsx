@@ -1,46 +1,16 @@
-import { mergePartProps } from '@fringeworks/react-parts-props';
-import type { ComponentPropsWithRef } from 'react';
-import type { RadioProps } from './types';
+import withRadio from '../withRadio';
 
 /**
  * ラジオボタン（グループに組み込む最低限の部品）
  *
+ * `withRadio` で、`<label>`・`<input>` を素の要素で描くようにしたもの。
  * `<label>` の中に `<input type="radio">` と `children` を置く。
- * その他の props は `<label>` に渡し、`<input>` には `partsProps.input` で渡す。
+ * 主要素は `<input>` で、`className`・`style` は `<label>` に、それ以外の props（`ref` を含む）は `<input>` に渡す。
+ * `partsProps.label` は `<label>` に、`partsProps.input` は `<input>` に渡し、同じプロパティならトップレベルで受け取ったものより優先する。
+ * 利用者の `onChange` を先に呼び、そこで `event.preventDefault()` されたら通知しない。
  * `readOnly`・`invalid` の ARIA の属性は、ラジオボタンには付けられないので、グループの入れ物に付ける（`useRadioGroup`）。
  */
-export default function Radio({
-  value,
-  onValueChange,
-  name,
-  disabled,
-  readOnly,
-  required,
-  invalid: _invalid,
-  children,
-  partsProps,
-  ...rest
-}: RadioProps) {
-  return (
-    <label {...rest}>
-      <input
-        {...mergePartProps<ComponentPropsWithRef<'input'>>(
-          {
-            type: 'radio',
-            name,
-            checked: value,
-            disabled,
-            required,
-            onChange: () => {
-              if (!readOnly) {
-                onValueChange?.(true);
-              }
-            },
-          },
-          partsProps?.input,
-        )}
-      />
-      {children}
-    </label>
-  );
-}
+const Radio = withRadio();
+Radio.displayName = 'Radio';
+
+export default Radio;

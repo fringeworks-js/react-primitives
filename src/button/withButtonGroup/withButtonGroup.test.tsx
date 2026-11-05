@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Button from '../Button';
 import type { ButtonSlotProps } from '../useButtonGroup';
+import type { ButtonGroupContainerSlotProps } from './types';
 import withButtonGroup from './withButtonGroup';
 
 const ButtonGroup = withButtonGroup({ Button });
@@ -72,5 +73,42 @@ describe('withButtonGroup', () => {
     expect(screen.getByRole('group').className).toBe('group');
     expect(onMainAction).toHaveBeenCalledExactlyOnceWith('copy');
     expect(AppButtonGroup.displayName).toBe('withButtonGroup(AppButton)');
+  });
+
+  it('組み込んだ入れ物で並べ、入れ物の属性と部品を渡す', () => {
+    const Container = (props: ButtonGroupContainerSlotProps) => (
+      <section {...props} data-part="container" />
+    );
+    const CustomButtonGroup = withButtonGroup({ Container, Button });
+    render(
+      <CustomButtonGroup
+        options={options}
+        aria-label="操作"
+        className="mine"
+      />,
+    );
+
+    const container = screen.getByRole('group', { name: '操作' });
+    expect(container.tagName).toBe('SECTION');
+    expect(container.dataset.part).toBe('container');
+    expect(container.className).toBe('mine');
+    expect(
+      screen.getAllByRole('button').every((item) => container.contains(item)),
+    ).toBe(true);
+  });
+
+  it('組み込んだ Button の props を、partsProps.button（選択肢ごと）で渡す', () => {
+    render(
+      <ButtonGroup
+        options={options}
+        partsProps={{
+          button: (option) => ({ title: String(option.value) }),
+        }}
+      />,
+    );
+
+    expect(screen.getAllByRole('button').map((button) => button.title)).toEqual(
+      ['copy', 'delete'],
+    );
   });
 });
