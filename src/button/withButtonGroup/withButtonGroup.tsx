@@ -5,6 +5,7 @@ import type { ElementType, ReactElement } from 'react';
 import type { CheckParts, ItemPartProps } from '../../_internal/_parts';
 import resolveItemPartProps from '../../_internal/_resolveItemPartProps';
 import toKey from '../../_internal/_toKey';
+import DefaultButton from '../Button';
 import useButtonGroup, { type UseButtonGroupProps } from '../useButtonGroup';
 import type {
   ButtonGroupParts,
@@ -35,12 +36,13 @@ type LooseProps<V> = UseButtonGroupProps<V> &
  * @param parts 組み込む部品
  * @returns ボタングループのコンポーネント
  */
-export default function withButtonGroup<P extends ButtonGroupParts>(
-  parts: P & CheckParts<P, ButtonGroupSlots>,
+export default function withButtonGroup<P extends ButtonGroupParts = object>(
+  parts: P & CheckParts<P, ButtonGroupSlots> = {} as P &
+    CheckParts<P, ButtonGroupSlots>,
 ) {
   // 組み込んだ部品ごとの props の型は ButtonGroupProps で決めるので、中では型を広げて描く
   const Container: ElementType = parts.Container ?? 'div';
-  const Button: ElementType = parts.Button;
+  const Button: ElementType = parts.Button ?? DefaultButton;
 
   function ButtonGroup<V>(props: ButtonGroupProps<V, P>): ReactElement {
     const { options, onMainAction, disabled, partsProps, ...rest } =

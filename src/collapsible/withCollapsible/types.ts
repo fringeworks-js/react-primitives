@@ -1,4 +1,9 @@
-import type { ComponentPropsWithRef, ElementType, ReactNode } from 'react';
+import type {
+  ComponentPropsWithRef,
+  ComponentType,
+  ElementType,
+  ReactNode,
+} from 'react';
 import type {
   PartOf,
   PartProps,
@@ -23,6 +28,26 @@ export type CollapsibleDetailsSlotProps = ComponentPropsWithRef<'details'>;
 export type CollapsibleSummarySlotProps = ComponentPropsWithRef<'summary'>;
 
 /**
+ * `withCollapsible` に組み込む印（`Indicator`）の部品が受け取る props
+ *
+ * 開閉の状態。印は飾りなので、`aria-hidden` を常に受け取る。受け取った状態で印を描く
+ * （素の要素をそのまま組み込むと、状態が DOM の属性に落ちる）。
+ */
+export type CollapsibleIndicatorSlotProps = {
+  /**
+   * 開いているか
+   */
+  open: boolean;
+
+  /**
+   * 操作できないか
+   */
+  disabled: boolean;
+
+  'aria-hidden': true;
+};
+
+/**
  * `withCollapsible` に組み込む部品
  *
  * どれも省略でき、省略すると素の要素で描く。組み込んだ部品の props は、作ったコンポーネントの
@@ -38,6 +63,11 @@ export type CollapsibleParts = {
    * `<summary>` を描く部品
    */
   Summary?: ElementType;
+
+  /**
+   * `<summary>` の中の、見出しの前に描く開閉の印。省略すると描かない
+   */
+  Indicator?: ElementType;
 };
 
 /**
@@ -46,6 +76,7 @@ export type CollapsibleParts = {
 export type CollapsibleSlots = {
   Details: CollapsibleDetailsSlotProps;
   Summary: CollapsibleSummarySlotProps;
+  Indicator: CollapsibleIndicatorSlotProps;
 };
 
 type OwnProps = UseCollapsibleProps & {
@@ -70,6 +101,14 @@ export type CollapsiblePartsProps<P = object> = {
    * `<summary>` の部品に渡す props
    */
   summary: PartProps<PartOf<P, 'Summary', 'summary'>, 'children'>;
+
+  /**
+   * 印（`Indicator`）の部品に渡す props。部品が決める状態（`CollapsibleIndicatorSlotProps`）は渡せない
+   */
+  indicator: PartProps<
+    PartOf<P, 'Indicator', ComponentType<CollapsibleIndicatorSlotProps>>,
+    keyof CollapsibleIndicatorSlotProps
+  >;
 };
 
 /**

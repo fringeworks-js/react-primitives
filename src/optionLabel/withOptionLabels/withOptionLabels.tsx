@@ -1,7 +1,9 @@
-import type { DisplayOption } from '@fringeworks/react-contract';
+import {
+  createSelectedOptions,
+  type DisplayOption,
+} from '@fringeworks/react-contract';
 import { getComponentName } from '@fringeworks/react-utils';
 import { Fragment, type ElementType, type ReactElement } from 'react';
-import createSelectedOptions from '../../_internal/_createSelectedOptions';
 import type { CheckParts, ItemPartProps } from '../../_internal/_parts';
 import resolveItemPartProps from '../../_internal/_resolveItemPartProps';
 import type {

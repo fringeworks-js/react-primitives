@@ -16,7 +16,7 @@ type LooseProps = Omit<UseCheckboxProps, 'indeterminate'> &
 /**
  * 組み込んだ部品で描く、値と操作の契約（`value`・`defaultValue`・`onValueChange`）に沿ったスイッチを作る HOC
  *
- * `<label>`（`Label`）の中に `<input type="checkbox" role="switch">`（`Input`）と `children` を置く。省略した部品は素の要素で描く。
+ * `<label>`（`Label`）の中に `<input type="checkbox" role="switch">`（`Input`）と `children` を置く。`Indicator` を組み込むと、`<input>` の直後に状態を表す印を描く（状態を props で渡す）。省略した部品は素の要素で描く（`Indicator` は描かない）。
  * 振る舞いはチェックボックスと同じ（`useCheckbox`）で、どちらとも言えない状態（`indeterminate`）は持たない。
  *
  * - 主要素は `<input>`。`className`・`style` は `<label>` に、それ以外の props（`ref` を含む）は `<input>` に渡す。
@@ -35,6 +35,7 @@ export default function withSwitch<P extends SwitchParts = object>(
   // 組み込んだ部品ごとの props の型は SwitchProps で決めるので、中では型を広げて描く
   const Label: ElementType = parts.Label ?? 'label';
   const Input: ElementType = parts.Input ?? 'input';
+  const Indicator: ElementType | undefined = parts.Indicator;
 
   function Switch(props: SwitchProps<P>): ReactElement {
     const {
@@ -50,7 +51,7 @@ export default function withSwitch<P extends SwitchParts = object>(
       indeterminate: _indeterminate,
       ...rest
     } = props as unknown as LooseProps & { indeterminate?: boolean };
-    const { getInputProps } = useCheckbox({
+    const { value: checkboxValue, getInputProps } = useCheckbox({
       value,
       defaultValue,
       onValueChange,
@@ -67,6 +68,16 @@ export default function withSwitch<P extends SwitchParts = object>(
     return (
       <Label {...labelProps}>
         <Input {...inputProps} />
+        {Indicator && (
+          <Indicator
+            {...rest.partsProps?.indicator}
+            checked={checkboxValue}
+            disabled={disabled ?? false}
+            readOnly={readOnly ?? false}
+            invalid={invalid ?? false}
+            aria-hidden
+          />
+        )}
         {children}
       </Label>
     );

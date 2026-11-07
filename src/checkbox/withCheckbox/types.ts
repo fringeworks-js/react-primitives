@@ -1,5 +1,6 @@
 import type {
   ComponentPropsWithRef,
+  ComponentType,
   CSSProperties,
   ElementType,
   ReactNode,
@@ -28,6 +29,41 @@ export type CheckboxLabelSlotProps = ComponentPropsWithRef<'label'>;
 export type CheckboxInputSlotProps = ComponentPropsWithRef<'input'>;
 
 /**
+ * `withCheckbox` に組み込む印（`Indicator`）の部品が受け取る props
+ *
+ * チェックボックスの状態。印は飾りなので、`aria-hidden` を常に受け取る。受け取った状態で印を描く
+ * （素の要素をそのまま組み込むと、状態が DOM の属性に落ちる）。
+ */
+export type CheckboxIndicatorSlotProps = {
+  /**
+   * 選ばれているか
+   */
+  checked: boolean;
+
+  /**
+   * どちらとも言えない状態か
+   */
+  indeterminate: boolean;
+
+  /**
+   * 操作できないか
+   */
+  disabled: boolean;
+
+  /**
+   * 値を変えられないか
+   */
+  readOnly: boolean;
+
+  /**
+   * 値が正しくないか
+   */
+  invalid: boolean;
+
+  'aria-hidden': true;
+};
+
+/**
  * `withCheckbox` に組み込む部品
  *
  * どれも省略でき、省略すると素の要素で描く。組み込んだ部品の props は、作ったコンポーネントの
@@ -43,6 +79,11 @@ export type CheckboxParts = {
    * `<input type="checkbox">`（主要素）
    */
   Input?: ElementType;
+
+  /**
+   * `<input>` の直後に描く、状態を表す印。省略すると描かない
+   */
+  Indicator?: ElementType;
 };
 
 /**
@@ -51,6 +92,7 @@ export type CheckboxParts = {
 export type CheckboxSlots = {
   Label: CheckboxLabelSlotProps;
   Input: CheckboxInputSlotProps;
+  Indicator: CheckboxIndicatorSlotProps;
 };
 
 /**
@@ -89,6 +131,14 @@ export type CheckboxPartsProps<P = object> = {
    * `<input>`（主要素）の部品に渡す props。トップレベルの props と同じ要素に渡すので、部品に必須のプロパティがあってもトップレベルで渡せば省略できる
    */
   input: Partial<PartProps<PartOf<P, 'Input', 'input'>, ControlledInputKeys>>;
+
+  /**
+   * 印（`Indicator`）の部品に渡す props。部品が決める状態（`CheckboxIndicatorSlotProps`）は渡せない
+   */
+  indicator: PartProps<
+    PartOf<P, 'Indicator', ComponentType<CheckboxIndicatorSlotProps>>,
+    keyof CheckboxIndicatorSlotProps
+  >;
 };
 
 /**

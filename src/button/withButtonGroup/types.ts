@@ -1,9 +1,5 @@
 import type { DisplayOption } from '@fringeworks/react-contract';
-import type {
-  ComponentPropsWithRef,
-  ElementType,
-  FunctionComponent,
-} from 'react';
+import type { ComponentPropsWithRef, ElementType } from 'react';
 import type {
   ItemPartProps,
   PartOf,
@@ -11,6 +7,7 @@ import type {
   PartsPropsProp,
   PrimaryPartProps,
 } from '../../_internal/_parts';
+import type Button from '../Button';
 import type { ButtonSlotProps, UseButtonGroupProps } from '../useButtonGroup';
 
 /**
@@ -33,9 +30,9 @@ export type ButtonGroupParts = {
   Container?: ElementType;
 
   /**
-   * 選択肢を描くボタン。`ButtonSlotProps` を受け取れるもの
+   * 選択肢を描くボタン。`ButtonSlotProps` を受け取れるもの。省略すると、react-primitives の `Button`
    */
-  Button: ElementType;
+  Button?: ElementType;
 };
 
 /**
@@ -47,13 +44,6 @@ export type ButtonGroupSlots = {
 };
 
 /**
- * `ButtonGroupProps` の既定の型引数（部品の props が口の props だけの場合）
- */
-export type DefaultButtonGroupParts = {
-  Button: FunctionComponent<ButtonSlotProps>;
-};
-
-/**
  * `partsProps` で部品に渡す props
  *
  * 組み込んだ部品の props から、グループが決める `ButtonSlotProps` のプロパティを除いたもの。
@@ -61,15 +51,12 @@ export type DefaultButtonGroupParts = {
  * @template V 選択肢の値の型
  * @template P 組み込んだ部品
  */
-export type ButtonGroupPartsProps<V, P = DefaultButtonGroupParts> = {
+export type ButtonGroupPartsProps<V, P = object> = {
   /**
    * 選択肢のボタンに渡す props。関数なら、選択肢ごとに決める
    */
   button: ItemPartProps<
-    PartProps<
-      PartOf<P, 'Button', FunctionComponent<ButtonSlotProps>>,
-      keyof ButtonSlotProps
-    >,
+    PartProps<PartOf<P, 'Button', typeof Button>, keyof ButtonSlotProps>,
     DisplayOption<V>
   >;
 };
@@ -84,7 +71,7 @@ export type ButtonGroupPartsProps<V, P = DefaultButtonGroupParts> = {
  */
 export type ButtonGroupProps<
   V,
-  P extends ButtonGroupParts = DefaultButtonGroupParts,
+  P extends ButtonGroupParts = object,
 > = UseButtonGroupProps<V> &
   PartsPropsProp<ButtonGroupPartsProps<V, P>> &
   PrimaryPartProps<PartOf<P, 'Container', 'div'>, keyof UseButtonGroupProps<V>>;

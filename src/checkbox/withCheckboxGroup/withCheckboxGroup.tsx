@@ -5,6 +5,7 @@ import type { ElementType, ReactElement, ReactNode } from 'react';
 import type { CheckParts, ItemPartProps } from '../../_internal/_parts';
 import resolveItemPartProps from '../../_internal/_resolveItemPartProps';
 import toKey from '../../_internal/_toKey';
+import DefaultCheckbox from '../Checkbox';
 import useCheckboxGroup, {
   type UseCheckboxGroupProps,
 } from '../useCheckboxGroup';
@@ -41,12 +42,15 @@ type LooseProps<V> = UseCheckboxGroupProps<V> &
  * @param parts 組み込む部品
  * @returns チェックボックスグループのコンポーネント
  */
-export default function withCheckboxGroup<P extends CheckboxGroupParts>(
-  parts: P & CheckParts<P, CheckboxGroupSlots>,
+export default function withCheckboxGroup<
+  P extends CheckboxGroupParts = object,
+>(
+  parts: P & CheckParts<P, CheckboxGroupSlots> = {} as P &
+    CheckParts<P, CheckboxGroupSlots>,
 ) {
   // 組み込んだ部品ごとの props の型は CheckboxGroupProps で決めるので、中では型を広げて描く
   const Container: ElementType = parts.Container ?? 'div';
-  const Checkbox: ElementType = parts.Checkbox;
+  const Checkbox: ElementType = parts.Checkbox ?? DefaultCheckbox;
   const SelectAll: ElementType = parts.SelectAll ?? Checkbox;
 
   function CheckboxGroup<V>(props: CheckboxGroupProps<V, P>): ReactElement {

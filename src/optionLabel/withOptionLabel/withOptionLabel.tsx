@@ -1,6 +1,6 @@
+import { createSelectedOptions } from '@fringeworks/react-contract';
 import { getComponentName } from '@fringeworks/react-utils';
 import type { ElementType, ReactElement } from 'react';
-import createSelectedOptions from '../../_internal/_createSelectedOptions';
 import type { CheckParts } from '../../_internal/_parts';
 import type {
   OptionLabelParts,

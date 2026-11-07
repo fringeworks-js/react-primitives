@@ -1,10 +1,5 @@
 import type { DisplayOption } from '@fringeworks/react-contract';
-import type {
-  ComponentPropsWithRef,
-  ElementType,
-  FunctionComponent,
-  ReactNode,
-} from 'react';
+import type { ComponentPropsWithRef, ElementType, ReactNode } from 'react';
 import type {
   ItemPartProps,
   PartOf,
@@ -12,6 +7,7 @@ import type {
   PartsPropsProp,
   PrimaryPartProps,
 } from '../../_internal/_parts';
+import type Checkbox from '../Checkbox';
 import type {
   CheckboxSlotProps,
   UseCheckboxGroupProps,
@@ -38,9 +34,9 @@ export type CheckboxGroupParts = {
   Container?: ElementType;
 
   /**
-   * 選択肢を描くチェックボックス（`SelectAll` を省略したら、すべて選ぶも描く）。`CheckboxSlotProps` を受け取れるもの
+   * 選択肢を描くチェックボックス（`SelectAll` を省略したら、すべて選ぶも描く）。`CheckboxSlotProps` を受け取れるもの。省略すると、react-primitives の `Checkbox`
    */
-  Checkbox: ElementType;
+  Checkbox?: ElementType;
 
   /**
    * すべて選ぶを描く部品。省略すると `Checkbox` で描く。`CheckboxSlotProps` を受け取れるもの
@@ -57,18 +53,7 @@ export type CheckboxGroupSlots = {
   SelectAll: CheckboxSlotProps;
 };
 
-/**
- * `CheckboxGroupProps` の既定の型引数（部品の props が口の props だけの場合）
- */
-export type DefaultCheckboxGroupParts = {
-  Checkbox: FunctionComponent<CheckboxSlotProps>;
-};
-
-type CheckboxPart<P> = PartOf<
-  P,
-  'Checkbox',
-  FunctionComponent<CheckboxSlotProps>
->;
+type CheckboxPart<P> = PartOf<P, 'Checkbox', typeof Checkbox>;
 
 type OwnProps<V> = UseCheckboxGroupProps<V> & {
   /**
@@ -90,7 +75,7 @@ type OwnProps<V> = UseCheckboxGroupProps<V> & {
  * @template V 選択肢の値の型
  * @template P 組み込んだ部品
  */
-export type CheckboxGroupPartsProps<V, P = DefaultCheckboxGroupParts> = {
+export type CheckboxGroupPartsProps<V, P = object> = {
   /**
    * 選択肢のチェックボックスに渡す props。関数なら、選択肢ごとに決める
    */
@@ -118,7 +103,7 @@ export type CheckboxGroupPartsProps<V, P = DefaultCheckboxGroupParts> = {
  */
 export type CheckboxGroupProps<
   V,
-  P extends CheckboxGroupParts = DefaultCheckboxGroupParts,
+  P extends CheckboxGroupParts = object,
 > = OwnProps<V> &
   PartsPropsProp<CheckboxGroupPartsProps<V, P>> &
   PrimaryPartProps<PartOf<P, 'Container', 'div'>, keyof OwnProps<V>>;

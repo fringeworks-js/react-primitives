@@ -5,6 +5,7 @@ import type { ElementType, ReactElement } from 'react';
 import type { CheckParts, ItemPartProps } from '../../_internal/_parts';
 import resolveItemPartProps from '../../_internal/_resolveItemPartProps';
 import toKey from '../../_internal/_toKey';
+import DefaultRadio from '../Radio';
 import useRadioGroup, { type UseRadioGroupProps } from '../useRadioGroup';
 import type {
   RadioGroupParts,
@@ -35,12 +36,13 @@ type LooseProps<V> = UseRadioGroupProps<V> &
  * @param parts 組み込む部品
  * @returns ラジオグループのコンポーネント
  */
-export default function withRadioGroup<P extends RadioGroupParts>(
-  parts: P & CheckParts<P, RadioGroupSlots>,
+export default function withRadioGroup<P extends RadioGroupParts = object>(
+  parts: P & CheckParts<P, RadioGroupSlots> = {} as P &
+    CheckParts<P, RadioGroupSlots>,
 ) {
   // 組み込んだ部品ごとの props の型は RadioGroupProps で決めるので、中では型を広げて描く
   const Container: ElementType = parts.Container ?? 'div';
-  const Radio: ElementType = parts.Radio;
+  const Radio: ElementType = parts.Radio ?? DefaultRadio;
 
   function RadioGroup<V>(props: RadioGroupProps<V, P>): ReactElement {
     const {

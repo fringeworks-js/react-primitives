@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   CollapsibleDetailsSlotProps,
+  CollapsibleIndicatorSlotProps,
   CollapsibleSummarySlotProps,
 } from './types';
 import withCollapsible from './withCollapsible';
@@ -82,5 +83,24 @@ describe('withCollapsible', () => {
     expect(withCollapsible({ Summary: AppSummary }).displayName).toBe(
       'withCollapsible(AppSummary)',
     );
+  });
+
+  it('Indicator を組み込むと、<summary> の中の見出しの前に、開閉の状態を渡して描く', () => {
+    const Indicator = (props: CollapsibleIndicatorSlotProps) => (
+      <span
+        data-testid="indicator"
+        aria-hidden={props['aria-hidden']}
+        data-open={props.open}
+      />
+    );
+    const Collapsible = withCollapsible({ Indicator });
+    render(<Collapsible summary="見出し">中身</Collapsible>);
+    const indicator = screen.getByTestId('indicator');
+    const summary = indicator.parentElement!;
+    expect(summary.tagName).toBe('SUMMARY');
+    expect(summary.firstChild).toBe(indicator);
+    expect(indicator.dataset.open).toBe('false');
+    fireEvent.click(summary);
+    expect(screen.getByTestId('indicator').dataset.open).toBe('true');
   });
 });

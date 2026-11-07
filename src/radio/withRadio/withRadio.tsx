@@ -16,7 +16,7 @@ type LooseProps = UseRadioProps &
 /**
  * 組み込んだ部品で描く、ラジオボタン（グループに組み込む部品）を作る HOC
  *
- * `<label>`（`Label`）の中に `<input type="radio">`（`Input`）と `children` を置く。省略した部品は素の要素で描く。
+ * `<label>`（`Label`）の中に `<input type="radio">`（`Input`）と `children` を置く。`Indicator` を組み込むと、`<input>` の直後に状態を表す印を描く（状態を props で渡す）。省略した部品は素の要素で描く（`Indicator` は描かない）。
  *
  * - 主要素は `<input>`。`className`・`style` は `<label>` に、それ以外の props（`ref` を含む）は `<input>` に渡す。
  *   `partsProps.label` は `<label>` に、`partsProps.input` は `<input>` に渡し、同じプロパティならトップレベルで受け取ったものより優先する
@@ -33,6 +33,7 @@ export default function withRadio<P extends RadioParts = object>(
   // 組み込んだ部品ごとの props の型は RadioProps で決めるので、中では型を広げて描く
   const Label: ElementType = parts.Label ?? 'label';
   const Input: ElementType = parts.Input ?? 'input';
+  const Indicator: ElementType | undefined = parts.Indicator;
 
   function Radio(props: RadioProps<P>): ReactElement {
     const {
@@ -63,6 +64,16 @@ export default function withRadio<P extends RadioParts = object>(
     return (
       <Label {...labelProps}>
         <Input {...inputProps} />
+        {Indicator && (
+          <Indicator
+            {...rest.partsProps?.indicator}
+            checked={value}
+            disabled={disabled ?? false}
+            readOnly={readOnly ?? false}
+            invalid={invalid ?? false}
+            aria-hidden
+          />
+        )}
         {children}
       </Label>
     );

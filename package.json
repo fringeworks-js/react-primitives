@@ -1,6 +1,6 @@
 {
   "name": "@fringeworks/react-primitives",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A library some will find handy, offering fine-grained React components for building components.",
   "keywords": [
@@ -33,13 +33,13 @@
     "tidy": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\" --config ./prettier.tidy.config.ts"
   },
   "dependencies": {
-    "@fringeworks/react-contract": "^0.1.0",
-    "@fringeworks/react-parts-props": "^0.9.0",
-    "@fringeworks/react-utils": "^0.12.1",
-    "@fringeworks/utils": "^2.1.0"
+    "@fringeworks/react-contract": "^0.2.0",
+    "@fringeworks/react-parts-props": "^0.9.1",
+    "@fringeworks/react-utils": "^0.12.2",
+    "@fringeworks/utils": "^2.2.0"
   },
   "devDependencies": {
-    "@fringeworks/dev": "^0.13.2",
+    "@fringeworks/dev": "^0.13.3",
     "@storybook/addon-docs": "^10.3.6",
     "@storybook/react-vite": "^10.3.6",
     "@testing-library/react": "^16.3.3",

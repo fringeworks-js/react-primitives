@@ -26,13 +26,14 @@ type LooseProps = UseCollapsibleProps &
       summary?: Record<string, unknown> & {
         onClick?: MouseEventHandler<HTMLElement>;
       };
+      indicator?: Record<string, unknown>;
     };
   };
 
 /**
  * 組み込んだ部品で描く、折りたためる部品を作る HOC
  *
- * `<details>`（`Details`）の中に、`summary` を入れた `<summary>`（`Summary`）と `children` を置く。省略した部品は素の要素で描く。
+ * `<details>`（`Details`）の中に、`summary` を入れた `<summary>`（`Summary`）と `children` を置く。`Indicator` を組み込むと、`<summary>` の中の見出しの前に開閉の印を描く（状態を props で渡す）。省略した部品は素の要素で描く（`Indicator` は描かない）。
  * その他の props は `<details>` に渡し、`<summary>` には `partsProps.summary` で渡す。
  *
  * - 組み込んだ部品の props が、ルート（`Details`）・`partsProps.summary` の型になる。部品に必須のプロパティがあれば、`partsProps` も必須になる
@@ -48,6 +49,7 @@ export default function withCollapsible<P extends CollapsibleParts = object>(
   // 組み込んだ部品ごとの props の型は CollapsibleProps で決めるので、中では型を広げて描く
   const Details: ElementType = parts.Details ?? 'details';
   const Summary: ElementType = parts.Summary ?? 'summary';
+  const Indicator: ElementType | undefined = parts.Indicator;
 
   function Collapsible(props: CollapsibleProps<P>): ReactElement {
     const {
@@ -61,7 +63,11 @@ export default function withCollapsible<P extends CollapsibleParts = object>(
       onToggle,
       ...rest
     } = props as unknown as LooseProps;
-    const { getDetailsProps, getSummaryProps } = useCollapsible({
+    const {
+      open: isOpen,
+      getDetailsProps,
+      getSummaryProps,
+    } = useCollapsible({
       open,
       defaultOpen,
       onOpenChange,
@@ -77,6 +83,14 @@ export default function withCollapsible<P extends CollapsibleParts = object>(
           {...summaryRest}
           {...getSummaryProps({ onClick: summaryOnClick })}
         >
+          {Indicator && (
+            <Indicator
+              {...partsProps?.indicator}
+              open={isOpen}
+              disabled={disabled ?? false}
+              aria-hidden
+            />
+          )}
           {summary}
         </Summary>
         {children}

@@ -1,9 +1,5 @@
 import type { DisplayOption } from '@fringeworks/react-contract';
-import type {
-  ComponentPropsWithRef,
-  ElementType,
-  FunctionComponent,
-} from 'react';
+import type { ComponentPropsWithRef, ElementType } from 'react';
 import type {
   ItemPartProps,
   PartOf,
@@ -11,6 +7,7 @@ import type {
   PartsPropsProp,
   PrimaryPartProps,
 } from '../../_internal/_parts';
+import type Radio from '../Radio';
 import type { RadioSlotProps, UseRadioGroupProps } from '../useRadioGroup';
 
 /**
@@ -33,9 +30,9 @@ export type RadioGroupParts = {
   Container?: ElementType;
 
   /**
-   * 選択肢を描くラジオボタン。`RadioSlotProps` を受け取れるもの
+   * 選択肢を描くラジオボタン。`RadioSlotProps` を受け取れるもの。省略すると、react-primitives の `Radio`
    */
-  Radio: ElementType;
+  Radio?: ElementType;
 };
 
 /**
@@ -47,13 +44,6 @@ export type RadioGroupSlots = {
 };
 
 /**
- * `RadioGroupProps` の既定の型引数（部品の props が口の props だけの場合）
- */
-export type DefaultRadioGroupParts = {
-  Radio: FunctionComponent<RadioSlotProps>;
-};
-
-/**
  * `partsProps` で部品に渡す props
  *
  * 組み込んだ部品の props から、グループが決める `RadioSlotProps` のプロパティを除いたもの。
@@ -61,15 +51,12 @@ export type DefaultRadioGroupParts = {
  * @template V 選択肢の値の型
  * @template P 組み込んだ部品
  */
-export type RadioGroupPartsProps<V, P = DefaultRadioGroupParts> = {
+export type RadioGroupPartsProps<V, P = object> = {
   /**
    * 選択肢のラジオボタンに渡す props。関数なら、選択肢ごとに決める
    */
   radio: ItemPartProps<
-    PartProps<
-      PartOf<P, 'Radio', FunctionComponent<RadioSlotProps>>,
-      keyof RadioSlotProps
-    >,
+    PartProps<PartOf<P, 'Radio', typeof Radio>, keyof RadioSlotProps>,
     DisplayOption<V>
   >;
 };
@@ -84,7 +71,7 @@ export type RadioGroupPartsProps<V, P = DefaultRadioGroupParts> = {
  */
 export type RadioGroupProps<
   V,
-  P extends RadioGroupParts = DefaultRadioGroupParts,
+  P extends RadioGroupParts = object,
 > = UseRadioGroupProps<V> &
   PartsPropsProp<RadioGroupPartsProps<V, P>> &
   PrimaryPartProps<PartOf<P, 'Container', 'div'>, keyof UseRadioGroupProps<V>>;

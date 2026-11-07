@@ -3,7 +3,11 @@ import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import withCheckboxGroup from '../../checkbox/withCheckboxGroup';
 import Switch from '../Switch';
-import type { SwitchInputSlotProps, SwitchLabelSlotProps } from './types';
+import type {
+  SwitchIndicatorSlotProps,
+  SwitchInputSlotProps,
+  SwitchLabelSlotProps,
+} from './types';
 import withSwitch from './withSwitch';
 
 describe('withSwitch', () => {
@@ -117,5 +121,21 @@ describe('withSwitch', () => {
         .getByRole('switch', { name: 'すべて' })
         .hasAttribute('indeterminate'),
     ).toBe(false);
+  });
+
+  it('Indicator を組み込むと、<input> の直後に状態を渡して描く。indeterminate は渡さない', () => {
+    const received: SwitchIndicatorSlotProps[] = [];
+    const Indicator = (props: SwitchIndicatorSlotProps) => {
+      received.push(props);
+      return <span data-testid="indicator" data-checked={props.checked} />;
+    };
+    const Switch = withSwitch({ Indicator });
+    render(<Switch />);
+    fireEvent.click(screen.getByRole('switch'));
+    expect(screen.getByRole('switch').nextSibling).toBe(
+      screen.getByTestId('indicator'),
+    );
+    expect(screen.getByTestId('indicator').dataset.checked).toBe('true');
+    expect(received[received.length - 1]).not.toHaveProperty('indeterminate');
   });
 });

@@ -14,6 +14,7 @@ export type LooseLabeledInputProps = LooseElementProps & {
   partsProps?: {
     label?: LooseElementProps;
     input?: LooseElementProps & { ref?: Ref<HTMLInputElement> };
+    indicator?: LooseElementProps;
   };
 };
 

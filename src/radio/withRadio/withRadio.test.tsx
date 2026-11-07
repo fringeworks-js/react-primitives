@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { RadioInputSlotProps, RadioLabelSlotProps } from './types';
+import type {
+  RadioIndicatorSlotProps,
+  RadioInputSlotProps,
+  RadioLabelSlotProps,
+} from './types';
 import withRadio from './withRadio';
 
 describe('withRadio', () => {
@@ -43,5 +47,23 @@ describe('withRadio', () => {
     expect(withRadio({ Label: AppLabel }).displayName).toBe(
       'withRadio(AppLabel)',
     );
+  });
+
+  it('Indicator を組み込むと、<input> の直後に状態を渡して描く', () => {
+    const Indicator = (props: RadioIndicatorSlotProps) => (
+      <span
+        data-testid="indicator"
+        aria-hidden={props['aria-hidden']}
+        data-checked={props.checked}
+        data-disabled={props.disabled}
+      />
+    );
+    const Radio = withRadio({ Indicator });
+    render(<Radio value disabled />);
+    const indicator = screen.getByTestId('indicator');
+    expect(screen.getByRole('radio').nextSibling).toBe(indicator);
+    expect(indicator.dataset.checked).toBe('true');
+    expect(indicator.dataset.disabled).toBe('true');
+    expect(indicator.getAttribute('aria-hidden')).toBe('true');
   });
 });

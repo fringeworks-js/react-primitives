@@ -37,6 +37,18 @@ Categories follow component families: a component and the group built from it (`
 
 As materials for building components, it provides headless UI hooks, HOCs that take parts, and minimal components.
 
+| Kind      | Example                                   | Role                                                                                                                                                                                                         |
+| --------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hook      | `useCheckbox`, `useTable`                 | Handles the behavior (state, how the value changes and is reported, ARIA attributes) and returns props for elements or data expanded into the units to draw. Use it to decide every element yourself         |
+| HOC       | `withCheckbox(parts)`, `withTable(parts)` | Uses the hook and decides which element goes inside which and which element receives which props. Every element it draws can be replaced as a part. Create it once in your app and place it as is on screens |
+| Component | `Checkbox`, `Table`                       | Created by the HOC without any parts (`const Checkbox = withCheckbox()`). It has no implementation of its own, so it behaves the same as the ones you create with the HOC                                    |
+
+- Display components with no state and no events (`OptionLabel` and `OptionLabels`) have no hook; they create what to show with `createSelectedOptions` of `@fringeworks/react-contract`. Components with the same behavior share a hook (`Switch` uses `useCheckbox`).
+- Every part of group HOCs (`withCheckboxGroup` and so on) can be omitted as well. When the checkbox and so on are omitted, they are drawn with `Checkbox` and so on of react-primitives.
+- Ready-to-use components with a look are in [`@fringeworks/react-components`](https://github.com/fringeworks-js/react-components).
+
+All of them follow these rules.
+
 - They have no look (styles) and add no CSS classes. Pass `className` (including through `partsProps`) yourself.
 - Their props follow the value and operation contract (`value`, `defaultValue`, `onValueChange`, `disabled`, `readOnly`, `required`, `invalid`, `options`, `open`, `defaultOpen`, `onOpenChange`, `onMainAction`, `onInputValueChange`, and so on).
 - Controlled and uncontrolled states follow `useControllableState` of `@fringeworks/react-utils`. A state is controlled when `value` is not `undefined`.
@@ -45,13 +57,14 @@ As materials for building components, it provides headless UI hooks, HOCs that t
 
 ### checkbox
 
-| Name                       | Description                                              |
-| -------------------------- | -------------------------------------------------------- |
-| `Checkbox`                 | A checkbox that follows the value and operation contract |
-| `withCheckbox(parts)`      | Creates a checkbox drawn with the given parts            |
-| `useCheckbox(props)`       | Handles the behavior of a checkbox (headless UI)         |
-| `useCheckboxGroup(props)`  | Handles the behavior of a checkbox group (headless UI)   |
-| `withCheckboxGroup(parts)` | Creates a checkbox group drawn with the given checkbox   |
+| Name                        | Description                                                    |
+| --------------------------- | -------------------------------------------------------------- |
+| `Checkbox`                  | A checkbox that follows the value and operation contract       |
+| `CheckboxGroup`             | A checkbox group that follows the value and operation contract |
+| `withCheckbox(parts)`       | Creates a checkbox drawn with the given parts                  |
+| `useCheckbox(props)`        | Handles the behavior of a checkbox (headless UI)               |
+| `useCheckboxGroup(props)`   | Handles the behavior of a checkbox group (headless UI)         |
+| `withCheckboxGroup(parts?)` | Creates a checkbox group drawn with the given checkbox         |
 
 #### `Checkbox`
 
@@ -63,18 +76,18 @@ As materials for building components, it provides headless UI hooks, HOCs that t
 
 Places an `<input type="checkbox">` and `children` inside a `<label>`.
 
-| Property         | Type                       | Description                                                    |
-| ---------------- | -------------------------- | -------------------------------------------------------------- |
-| `value?`         | `boolean`                  | Whether it is checked (controlled)                             |
-| `defaultValue?`  | `boolean`                  | The initial checked state (uncontrolled). Defaults to `false`  |
-| `onValueChange?` | `(value: boolean) => void` | Called when the checked state is toggled                       |
-| `disabled?`      | `boolean`                  | Disables the checkbox                                          |
-| `readOnly?`      | `boolean`                  | Keeps the display but prevents toggling (sets `aria-readonly`) |
-| `required?`      | `boolean`                  | Makes it required                                              |
-| `invalid?`       | `boolean`                  | Indicates that the value is invalid (sets `aria-invalid`)      |
-| `indeterminate?` | `boolean`                  | Shows the indeterminate state. Does not change `value`         |
-| `children?`      | `ReactNode`                | The content shown next to the checkbox                         |
-| `partsProps?`    | `{ label?; input? }`       | Props passed to the `<label>` or the `<input>` by name         |
+| Property         | Type                             | Description                                                                                        |
+| ---------------- | -------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `value?`         | `boolean`                        | Whether it is checked (controlled)                                                                 |
+| `defaultValue?`  | `boolean`                        | The initial checked state (uncontrolled). Defaults to `false`                                      |
+| `onValueChange?` | `(value: boolean) => void`       | Called when the checked state is toggled                                                           |
+| `disabled?`      | `boolean`                        | Disables the checkbox                                                                              |
+| `readOnly?`      | `boolean`                        | Keeps the display but prevents toggling (sets `aria-readonly`)                                     |
+| `required?`      | `boolean`                        | Makes it required                                                                                  |
+| `invalid?`       | `boolean`                        | Indicates that the value is invalid (sets `aria-invalid`)                                          |
+| `indeterminate?` | `boolean`                        | Shows the indeterminate state. Does not change `value`                                             |
+| `children?`      | `ReactNode`                      | The content shown next to the checkbox                                                             |
+| `partsProps?`    | `{ label?; input?; indicator? }` | Props passed to the `<label>`, the `<input>`, or the indicator (when `Indicator` is given) by name |
 
 - The primary element is the `<input>`. `className` and `style` are passed to the `<label>`; other props (`ref`, `id`, `name`, `aria-*`, `data-*`, event handlers, and so on) are passed to the `<input>`. You can associate it with outside elements through `aria-labelledby`, `aria-describedby`, and so on.
 - Pass a `ref` or attributes for the `<label>` through `partsProps.label`. Props given through `partsProps.label` or `partsProps.input` take precedence over the same props given at the top level (`className`, `style`, event handlers, and `ref` are combined).
@@ -90,14 +103,20 @@ withCheckbox<P extends CheckboxParts>(parts?: P): (props: CheckboxProps<P>) => R
 
 Creates a checkbox drawn with the given parts. `Checkbox` is the one created without parts.
 
-| Part     | Type          | Description                                                                                                                                        |
-| -------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Label?` | `ElementType` | The `<label>` that wraps the `<input>` and the text (the root). Pass the props it receives (`children` and so on) to its element                   |
-| `Input?` | `ElementType` | The `<input type="checkbox">` (the primary element). Pass the props it receives (`type`, `checked`, `onChange`, `ref`, and so on) to the `<input>` |
+| Part         | Type          | Description                                                                                                                                                                                                                |
+| ------------ | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Label?`     | `ElementType` | The `<label>` that wraps the `<input>` and the text (the root). Pass the props it receives (`children` and so on) to its element                                                                                           |
+| `Input?`     | `ElementType` | The `<input type="checkbox">` (the primary element). Pass the props it receives (`type`, `checked`, `onChange`, `ref`, and so on) to the `<input>`                                                                         |
+| `Indicator?` | `ElementType` | The indicator of the state, drawn right after the `<input>`. Not drawn when omitted. Anything that accepts `CheckboxIndicatorSlotProps` (`checked`, `indeterminate`, `disabled`, `readOnly`, `invalid`, and `aria-hidden`) |
 
 - The created component takes the same props as `Checkbox`.
 - The props of the given parts become the types of the created component. The primary element is the `<input>`, so the remaining top-level props are the props of `Input`, `partsProps.label` is the props of `Label`, and `partsProps.input` is the props of `Input` (pass required props of `Input` at the top level). If `Label` has required props, `partsProps` becomes required too.
 - `Input` must pass `ref` to the `<input>` (to set `indeterminate` on the DOM).
+- `Indicator` receives the state as props (they win over `partsProps.indicator`). The indicator is decorative, so it always receives `aria-hidden`. Give a part that draws the indicator from the state it receives (a plain element would get the state as DOM attributes). It has no look, so write the CSS yourself, such as hiding the `<input>` (the indicator comes right after the `<input>`, so `input:focus-visible + indicator` can draw the focus outline).
+
+```tsx
+const AppCheckbox = withCheckbox({ Indicator: CheckIcon });
+```
 
 #### `useCheckbox`
 
@@ -122,6 +141,20 @@ const checkbox = useCheckbox({ value, onValueChange: setValue });
 | `getInputProps` | `(handlers?) => CheckboxInputProps` | Creates the props for the `<input>` (`type`, `checked`, `disabled`, `required`, `aria-readonly`, `aria-invalid`, `ref`, `onChange`). Calls the user's `onChange` first |
 
 - The `ref` is for setting `indeterminate` on the DOM. If you also use your own ref, combine them.
+
+#### `CheckboxGroup`
+
+```tsx
+<CheckboxGroup
+  options={fruits}
+  value={selected}
+  onValueChange={setSelected}
+  showSelectAll
+  selectAllLabel="All"
+/>
+```
+
+A checkbox group that follows the value and operation contract. It is created by `withCheckboxGroup` without any parts, drawing the container with `<div>` and the checkboxes with `Checkbox`. It takes the same props as a component created with `withCheckboxGroup`. It has no look and no layout (vertical or horizontal); decide them with `className` (including through `partsProps`).
 
 #### `useCheckboxGroup`
 
@@ -175,7 +208,7 @@ const group = useCheckboxGroup({ options, value, onValueChange: setValue });
 #### `withCheckboxGroup`
 
 ```ts
-withCheckboxGroup<P extends CheckboxGroupParts>(parts: P): <V>(props: CheckboxGroupProps<V, P>) => ReactElement
+withCheckboxGroup<P extends CheckboxGroupParts>(parts?: P): <V>(props: CheckboxGroupProps<V, P>) => ReactElement
 ```
 
 Creates a checkbox group drawn with the given checkbox. Create it once in your app and place it on screens as it is.
@@ -197,7 +230,7 @@ export const AppCheckboxGroup = withCheckboxGroup({ Checkbox: AppCheckbox });
 | Part         | Type          | Description                                                                                                                                     |
 | ------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Container?` | `ElementType` | The container that lays out the parts. Defaults to `<div>`. Pass the props it receives (`role`, `aria-*`, `children`, and so on) to its element |
-| `Checkbox`   | `ElementType` | The checkbox that draws the options. Anything that accepts `CheckboxSlotProps`                                                                  |
+| `Checkbox?`  | `ElementType` | The checkbox that draws the options. Defaults to `Checkbox`. Anything that accepts `CheckboxSlotProps`                                          |
 | `SelectAll?` | `ElementType` | The part that draws "select all". Defaults to `Checkbox`. Anything that accepts `CheckboxSlotProps`                                             |
 
 The created component takes the props of `useCheckboxGroup` and the following props.
@@ -211,7 +244,7 @@ The created component takes the props of `useCheckboxGroup` and the following pr
 - Places the checkboxes inside the container (`Container`, defaulting to `<div>`) with `role="group"` and so on. Other props (`className`, `style`, `aria-label`, and so on) are passed to the container.
 - It has no layout (vertical or horizontal). Decide it with `className` and so on.
 - The checkbox receives `CheckboxSlotProps`. The label of an option is passed as `children`. `indeterminate` is passed only to the "select all" checkbox, so the checkbox does not need to support it unless you use "select all".
-- You can pass `Checkbox` as it is (`withCheckboxGroup({ Checkbox })`).
+- When omitted, the checkboxes are drawn with `Checkbox`. `CheckboxGroup` is the one created with every part omitted.
 - The props of the given parts become the types of the created component. The remaining root props are the props of `Container`, and `partsProps.checkbox` / `partsProps.selectAll` are the props of the checkbox parts without the `CheckboxSlotProps` properties that the group decides. Pass `partsProps.checkbox` as a value or a function (it receives an option and decides per option). If a part has required props, `partsProps` becomes required too.
 - If a part has a `CheckboxSlotProps` property with a different type (such as an `onValueChange` that receives an event), calling `withCheckboxGroup` is a type error. Wrap the part thinly to match.
 
@@ -232,13 +265,14 @@ const DsCheckboxGroup = withCheckboxGroup({ Checkbox: DsCheckbox });
 
 ### radio
 
-| Name                    | Description                                             |
-| ----------------------- | ------------------------------------------------------- |
-| `Radio`                 | A radio button for a radio group                        |
-| `withRadio(parts)`      | Creates a radio button drawn with the given parts       |
-| `useRadio(props)`       | Handles the behavior of a radio button (headless UI)    |
-| `useRadioGroup(props)`  | Handles the behavior of a radio group (headless UI)     |
-| `withRadioGroup(parts)` | Creates a radio group drawn with the given radio button |
+| Name                     | Description                                                 |
+| ------------------------ | ----------------------------------------------------------- |
+| `Radio`                  | A radio button for a radio group                            |
+| `RadioGroup`             | A radio group that follows the value and operation contract |
+| `withRadio(parts)`       | Creates a radio button drawn with the given parts           |
+| `useRadio(props)`        | Handles the behavior of a radio button (headless UI)        |
+| `useRadioGroup(props)`   | Handles the behavior of a radio group (headless UI)         |
+| `withRadioGroup(parts?)` | Creates a radio group drawn with the given radio button     |
 
 #### `Radio`
 
@@ -250,17 +284,17 @@ const DsCheckboxGroup = withCheckboxGroup({ Checkbox: DsCheckbox });
 
 A radio button for a radio group. Places an `<input type="radio">` and `children` inside a `<label>`. A radio button is not used alone, so it takes only a controlled `value`. Usually you pass it to `withRadioGroup({ Radio })`.
 
-| Property         | Type                       | Description                                                                                   |
-| ---------------- | -------------------------- | --------------------------------------------------------------------------------------------- |
-| `value`          | `boolean`                  | Whether it is selected                                                                        |
-| `onValueChange?` | `(value: boolean) => void` | Called when it is selected (a radio button cannot be cleared, so it always passes `true`)     |
-| `name?`          | `string`                   | The group name. Radio buttons with the same name act as one group with the Tab and arrow keys |
-| `disabled?`      | `boolean`                  | Disables it                                                                                   |
-| `readOnly?`      | `boolean`                  | Keeps it as it is and prevents selecting                                                      |
-| `required?`      | `boolean`                  | Marks it as required (one of the group must be selected)                                      |
-| `invalid?`       | `boolean`                  | Marks the value as invalid (no ARIA attribute is set; see below)                              |
-| `children?`      | `ReactNode`                | The content shown next to the radio button                                                    |
-| `partsProps?`    | `{ label?; input? }`       | Props passed to the `<label>` or the `<input>` by name                                        |
+| Property         | Type                             | Description                                                                                        |
+| ---------------- | -------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `value`          | `boolean`                        | Whether it is selected                                                                             |
+| `onValueChange?` | `(value: boolean) => void`       | Called when it is selected (a radio button cannot be cleared, so it always passes `true`)          |
+| `name?`          | `string`                         | The group name. Radio buttons with the same name act as one group with the Tab and arrow keys      |
+| `disabled?`      | `boolean`                        | Disables it                                                                                        |
+| `readOnly?`      | `boolean`                        | Keeps it as it is and prevents selecting                                                           |
+| `required?`      | `boolean`                        | Marks it as required (one of the group must be selected)                                           |
+| `invalid?`       | `boolean`                        | Marks the value as invalid (no ARIA attribute is set; see below)                                   |
+| `children?`      | `ReactNode`                      | The content shown next to the radio button                                                         |
+| `partsProps?`    | `{ label?; input?; indicator? }` | Props passed to the `<label>`, the `<input>`, or the indicator (when `Indicator` is given) by name |
 
 - The primary element is the `<input>`. `className` and `style` are passed to the `<label>`; other props (`ref`, `id`, `aria-*`, `data-*`, event handlers, and so on) are passed to the `<input>`. Pass props for the `<label>` through `partsProps.label` (the same as `Checkbox`).
 - `onChange` is called before the component's handling; if it calls `event.preventDefault()`, it does not report.
@@ -272,7 +306,7 @@ A radio button for a radio group. Places an `<input type="radio">` and `children
 withRadio<P extends RadioParts>(parts?: P): (props: RadioProps<P>) => ReactElement
 ```
 
-Creates a radio button drawn with the given parts. `Radio` is the one created without parts. The parts (`Label`, `Input`) and the typing rules are the same as `withCheckbox` (`Input` is an `<input type="radio">`).
+Creates a radio button drawn with the given parts. `Radio` is the one created without parts. The parts (`Label`, `Input`, `Indicator`) and the typing rules are the same as `withCheckbox` (`Input` is an `<input type="radio">`, and `Indicator` receives `RadioIndicatorSlotProps`, without `indeterminate`).
 
 #### `useRadio`
 
@@ -285,6 +319,14 @@ Handles the behavior of a radio button. The props are the same as `value`, `onVa
 | Return value    | Type                             | Description                                                                                                                            |
 | --------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `getInputProps` | `(handlers?) => RadioInputProps` | Creates the props for the `<input>` (`type`, `name`, `checked`, `disabled`, `required`, `onChange`). Calls the user's `onChange` first |
+
+#### `RadioGroup`
+
+```tsx
+<RadioGroup options={sizes} value={size} onValueChange={setSize} />
+```
+
+A radio group that follows the value and operation contract. It is created by `withRadioGroup` without any parts, drawing the container with `<div>` and the radio buttons with `Radio`. It takes the same props as a component created with `withRadioGroup`. It has no look and no layout.
 
 #### `useRadioGroup`
 
@@ -334,10 +376,10 @@ const group = useRadioGroup({ options, value, onValueChange: setValue });
 #### `withRadioGroup`
 
 ```ts
-withRadioGroup<P extends RadioGroupParts>(parts: P): <V>(props: RadioGroupProps<V, P>) => ReactElement
+withRadioGroup<P extends RadioGroupParts>(parts?: P): <V>(props: RadioGroupProps<V, P>) => ReactElement
 ```
 
-Creates a radio group drawn with the given radio button.
+Creates a radio group drawn with the given radio button. `RadioGroup` is the one created with every part omitted.
 
 ```tsx
 const RadioGroup = withRadioGroup({ Radio });
@@ -348,7 +390,7 @@ const RadioGroup = withRadioGroup({ Radio });
 | Part         | Type          | Description                                                                                                                                     |
 | ------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Container?` | `ElementType` | The container that lays out the parts. Defaults to `<div>`. Pass the props it receives (`role`, `aria-*`, `children`, and so on) to its element |
-| `Radio`      | `ElementType` | The radio button that draws the options. Anything that accepts `RadioSlotProps`                                                                 |
+| `Radio?`     | `ElementType` | The radio button that draws the options. Defaults to `Radio`. Anything that accepts `RadioSlotProps`                                            |
 
 - The created component takes the props of `useRadioGroup` and `partsProps?` (`{ radio? }`).
 - The props of the given parts become the types of the created component (as in `withCheckboxGroup`). The remaining root props are the props of `Container`, and `partsProps.radio` is the props of the radio part without the `RadioSlotProps` properties. Pass it as a value or a function (per option).
@@ -382,7 +424,7 @@ A switch that follows the value and operation contract. Places an `<input type="
 withSwitch<P extends SwitchParts>(parts?: P): (props: SwitchProps<P>) => ReactElement
 ```
 
-Creates a switch drawn with the given parts. `Switch` is the one created without parts. The parts (`Label`, `Input`) and the typing rules are the same as `withCheckbox`.
+Creates a switch drawn with the given parts. `Switch` is the one created without parts. The parts (`Label`, `Input`, `Indicator`) and the typing rules are the same as `withCheckbox` (`Indicator` receives `SwitchIndicatorSlotProps`, without `indeterminate`).
 
 ### optionLabel
 
@@ -464,12 +506,14 @@ const ChipLabels = withOptionLabels({ Label: Chip });
 
 ### button
 
-| Name                     | Description                                                             |
-| ------------------------ | ----------------------------------------------------------------------- |
-| `Button`                 | A button that follows the value and operation contract (`onMainAction`) |
-| `withButton(parts)`      | Creates a button drawn with the given part                              |
-| `useButtonGroup(props)`  | Handles the behavior of a button group (headless UI)                    |
-| `withButtonGroup(parts)` | Creates a button group drawn with the given button                      |
+| Name                      | Description                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------------- |
+| `Button`                  | A button that follows the value and operation contract (`onMainAction`)                     |
+| `ButtonGroup`             | A button group that follows the value and operation contract (`options` and `onMainAction`) |
+| `withButton(parts?)`      | Creates a button drawn with the given part                                                  |
+| `useButton(props)`        | Handles the behavior of a button (headless UI)                                              |
+| `useButtonGroup(props)`   | Handles the behavior of a button group (headless UI)                                        |
+| `withButtonGroup(parts?)` | Creates a button group drawn with the given button                                          |
 
 #### `Button`
 
@@ -506,6 +550,35 @@ Creates a button drawn with the given part. `Button` is the one created without 
 
 - The created component takes the same props as `Button`. Other props are passed to the part, and their types are the props of the part.
 
+#### `useButton`
+
+```ts
+useButton<V = undefined>(props: UseButtonProps<V>): UseButtonResult
+```
+
+Handles the behavior of a button. When pressed, it passes `value` as is to `onMainAction`. It has no state. Use it to make your own `<button>` behave the same as `Button`.
+
+```tsx
+const { getButtonProps } = useButton({ value: id, onMainAction: remove });
+
+<button className="my-button" {...getButtonProps({ onClick })}>
+  Delete
+</button>;
+```
+
+| Property        | Type                              | Description                                                              |
+| --------------- | --------------------------------- | ------------------------------------------------------------------------ |
+| `value?`        | `V`                               | The value passed to `onMainAction` when pressed. Defaults to `undefined` |
+| `onMainAction?` | `(value: V) => void`              | Called when pressed                                                      |
+| `disabled?`     | `boolean`                         | Disables the button                                                      |
+| `type?`         | `'button' \| 'submit' \| 'reset'` | The HTML `type`. Defaults to `'button'`                                  |
+
+| Result           | Type                                | Description                                                                                                     |
+| ---------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `getButtonProps` | `(handlers?) => ButtonElementProps` | Creates the props for `<button>` (`type`, `disabled`, and `onClick`). Your `onClick`, if given, is called first |
+
+- When your `onClick` calls `event.preventDefault()`, `onMainAction` is not called.
+
 #### `useButtonGroup`
 
 ```ts
@@ -531,10 +604,10 @@ Handles the behavior of a button group. Lays out buttons from the options and pa
 #### `withButtonGroup`
 
 ```ts
-withButtonGroup<P extends ButtonGroupParts>(parts: P): <V>(props: ButtonGroupProps<V, P>) => ReactElement
+withButtonGroup<P extends ButtonGroupParts>(parts?: P): <V>(props: ButtonGroupProps<V, P>) => ReactElement
 ```
 
-Creates a button group drawn with the given button.
+Creates a button group drawn with the given button. `ButtonGroup` is the one created with every part omitted.
 
 ```tsx
 const ButtonGroup = withButtonGroup({ Button });
@@ -545,7 +618,7 @@ const ButtonGroup = withButtonGroup({ Button });
 | Part         | Type          | Description                                                                                                                                     |
 | ------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Container?` | `ElementType` | The container that lays out the parts. Defaults to `<div>`. Pass the props it receives (`role`, `aria-*`, `children`, and so on) to its element |
-| `Button`     | `ElementType` | The button that draws the options. Anything that accepts `ButtonSlotProps`                                                                      |
+| `Button?`    | `ElementType` | The button that draws the options. Defaults to `Button`. Anything that accepts `ButtonSlotProps`                                                |
 
 - The created component takes the props of `useButtonGroup` and `partsProps?` (`{ button? }`).
 - The props of the given parts become the types of the created component (as in `withCheckboxGroup`). The remaining root props are the props of `Container`, and `partsProps.button` is the props of the button part without the `ButtonSlotProps` properties. Pass it as a value or a function (per option).
@@ -647,15 +720,15 @@ const textInput = useTextInput({ value, onValueChange: setValue });
 
 A collapsible component that follows the value and operation contract (`open`, `defaultOpen`, `onOpenChange`). Places a `<summary>` with `summary` and `children` inside an HTML `<details>`.
 
-| Property        | Type                      | Description                                                            |
-| --------------- | ------------------------- | ---------------------------------------------------------------------- |
-| `open?`         | `boolean`                 | Whether it is open (controlled)                                        |
-| `defaultOpen?`  | `boolean`                 | The initial open state (uncontrolled). Defaults to `false`             |
-| `onOpenChange?` | `(open: boolean) => void` | Called when it opens or closes                                         |
-| `disabled?`     | `boolean`                 | Prevents opening and closing (sets `aria-disabled` on the `<summary>`) |
-| `summary?`      | `ReactNode`               | The heading (the content of the `<summary>`)                           |
-| `children?`     | `ReactNode`               | The content shown when open                                            |
-| `partsProps?`   | `{ summary? }`            | Props for the `<summary>` (`className`, event handlers, and so on)     |
+| Property        | Type                       | Description                                                                                                      |
+| --------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `open?`         | `boolean`                  | Whether it is open (controlled)                                                                                  |
+| `defaultOpen?`  | `boolean`                  | The initial open state (uncontrolled). Defaults to `false`                                                       |
+| `onOpenChange?` | `(open: boolean) => void`  | Called when it opens or closes                                                                                   |
+| `disabled?`     | `boolean`                  | Prevents opening and closing (sets `aria-disabled` on the `<summary>`)                                           |
+| `summary?`      | `ReactNode`                | The heading (the content of the `<summary>`)                                                                     |
+| `children?`     | `ReactNode`                | The content shown when open                                                                                      |
+| `partsProps?`   | `{ summary?; indicator? }` | Props for the `<summary>` and the indicator (when `Indicator` is given) (`className`, event handlers, and so on) |
 
 - Pressing the heading (also with Enter or Space) stops the browser's toggle and calls `onOpenChange`. When controlled, it opens or closes only when the parent changes `open`.
 - When the browser opens or closes it on its own (such as opening it when find-in-page finds text inside), it also calls `onOpenChange`. When controlled and the parent does not accept it, it returns to the previous state.
@@ -671,14 +744,16 @@ withCollapsible<P extends CollapsibleParts>(parts?: P): (props: CollapsibleProps
 
 Creates a collapsible component drawn with the given parts. `Collapsible` is the one created without parts.
 
-| Part       | Type          | Description                                                                                                                            |
-| ---------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `Details?` | `ElementType` | The part that draws the `<details>`. Pass the props it receives (`open`, `onToggle`, `children`, and so on) to the `<details>`         |
-| `Summary?` | `ElementType` | The part that draws the `<summary>`. Pass the props it receives (`onClick`, `aria-disabled`, `children`, and so on) to the `<summary>` |
+| Part         | Type          | Description                                                                                                                                                                                       |
+| ------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Details?`   | `ElementType` | The part that draws the `<details>`. Pass the props it receives (`open`, `onToggle`, `children`, and so on) to the `<details>`                                                                    |
+| `Summary?`   | `ElementType` | The part that draws the `<summary>`. Pass the props it receives (`onClick`, `aria-disabled`, `children`, and so on) to the `<summary>`                                                            |
+| `Indicator?` | `ElementType` | The open/close marker drawn before the summary text inside the `<summary>`. Not drawn when omitted. Anything that accepts `CollapsibleIndicatorSlotProps` (`open`, `disabled`, and `aria-hidden`) |
 
 - The created component takes the same props as `Collapsible`.
 - The props of the given parts become the types of the created component. The remaining root props are the props of `Details`, and `partsProps.summary` is the props of `Summary` without `children`. If a part has required props, `partsProps` becomes required too.
 - Opening and closing use the `open` and `toggle` of `<details>`, so the parts must draw a `<details>` and a `<summary>`.
+- `Indicator` receives the open state as props (they win over `partsProps.indicator`).
 
 #### `useCollapsible`
 
@@ -706,12 +781,13 @@ const collapsible = useCollapsible({ open, onOpenChange: setOpen });
 
 ### recordField
 
-| Name                             | Description                                                                                  |
-| -------------------------------- | -------------------------------------------------------------------------------------------- |
-| `RecordField<T>`                 | The type of a record field (key, label, and the function that draws its value)               |
-| `renderFieldValue(field, props)` | Draws the value of a field (a field without `renderValue` shows its value as text)           |
-| `RecordFields`                   | A component that lays out the fields of a record, following the value and operation contract |
-| `useRecordFields(props)`         | Handles the behavior of a component that lays out the fields of a record (headless UI)       |
+| Name                                      | Description                                                                                  |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `RecordField<T>`                          | The type of a record field (key, label, and the function that draws its value)               |
+| `renderFieldValue(field, props, context)` | Draws the value of a field (a field without `renderValue` shows its value as text)           |
+| `RecordFields`                            | A component that lays out the fields of a record, following the value and operation contract |
+| `withRecordFields(parts?)`                | Creates a component that lays out the fields of a record, drawn with the given parts         |
+| `useRecordFields(props)`                  | Handles the behavior of a component that lays out the fields of a record (headless UI)       |
 
 #### `RecordField<T>`
 
@@ -721,18 +797,18 @@ type RecordField<T> = {
   label: ReactNode;
   renderValue?: (
     props: FieldValueProps<T[key]>,
-    context: FieldValueContext,
+    context: FieldValueContext<T>,
   ) => ReactNode;
 };
 ```
 
 A field of a record. It can also be used as a column of a table (`Table`) as is. Because it is a union per key, the type of the value `renderValue` receives is narrowed by `key`.
 
-| Property       | Type                                                                        | Description                                                                                               |
-| -------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `key`          | `keyof T & string`                                                          | The key to read the value from                                                                            |
-| `label`        | `ReactNode`                                                                 | The label of the field (the column header in a table)                                                     |
-| `renderValue?` | `(props: FieldValueProps<T[key]>, context: FieldValueContext) => ReactNode` | Draws the value of the field. When omitted, the value is shown as text (`null` and `undefined` are empty) |
+| Property       | Type                                                                           | Description                                                                                               |
+| -------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `key`          | `keyof T & string`                                                             | The key to read the value from                                                                            |
+| `label`        | `ReactNode`                                                                    | The label of the field (the column header in a table)                                                     |
+| `renderValue?` | `(props: FieldValueProps<T[key]>, context: FieldValueContext<T>) => ReactNode` | Draws the value of the field. When omitted, the value is shown as text (`null` and `undefined` are empty) |
 
 `FieldValueProps<V>`, which `renderValue` receives, can be passed to an input component as is (`renderValue: (props) => <TextInput {...props} />`).
 
@@ -742,14 +818,18 @@ A field of a record. It can also be used as a column of a table (`Table`) as is.
 | `onValueChange`   | `(value: V) => void` | Called when the value of the field is committed. The component rebuilds the whole value and reports it |
 | `aria-labelledby` | `string`             | The id of the element of the field's label (the column header in a table)                              |
 
-The second argument of `renderValue` (`FieldValueContext`) carries information that is not spread to the component. Putting it in the props would leak it into DOM attributes when the props are spread.
+The second argument of `renderValue` (`FieldValueContext<T>`) carries information that is not spread to the component. Putting it in the props would leak it into DOM attributes when the props are spread.
 
 | Property | Type                | Description                                                                                                                                                                                                                                               |
 | -------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `path`   | `readonly string[]` | The path of the field's value, seen from the value given to the component: `[row id, key]` for `Table` and `[key]` for `RecordFields`. The same shape as `path` in the details; use it to read state-model validation results (`validation.issues(path)`) |
+| `record` | `T`                 | The record that holds the field (the row in a table). Use it to change how the value is drawn depending on other fields (making it `disabled`, for example)                                                                                               |
 
 ```tsx
 renderValue: (props, { path }) => <MyCell {...props} path={path} />;
+renderValue: (props, { record }) => (
+  <TextInput {...props} disabled={!record.active} />
+);
 ```
 
 - `renderValue` is called as a plain function inside a hook. To use hooks in it, return a component (`renderValue: (props) => <MyCell {...props} />`).
@@ -757,7 +837,7 @@ renderValue: (props, { path }) => <MyCell {...props} path={path} />;
 #### `renderFieldValue`
 
 ```ts
-renderFieldValue<T>(field: RecordField<T>, props: FieldValueProps<T[keyof T & string]>, context: FieldValueContext): ReactNode
+renderFieldValue<T>(field: RecordField<T>, props: FieldValueProps<T[keyof T & string]>, context: FieldValueContext<T>): ReactNode
 ```
 
 Calls the field's `renderValue` with `props` and `context`. For a field without it, returns the value as text (`null` and `undefined` are empty). `useTable` and `useRecordFields` draw values with this. Use it when you build a component that lays out fields yourself.
@@ -784,7 +864,7 @@ const fields: RecordField<Member>[] = [
 <RecordFields value={member} onValueChange={setMember} fields={fields} />;
 ```
 
-A component that lays out the fields of a record, following the value and operation contract. It takes a record as `value`, and when the value of a field is committed, reports the changed record through `onValueChange`. It has no submission (`<form>`), so it can be placed inside your own `<form>`.
+A component that lays out the fields of a record, following the value and operation contract. It takes a record as `value`, and when the value of a field is committed, reports the changed record through `onValueChange`. It has no submission (`<form>`), so it can be placed inside your own `<form>`. It is created by `withRecordFields` without any parts.
 
 | Property         | Type                                                          | Description                                                                                  |
 | ---------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
@@ -792,12 +872,47 @@ A component that lays out the fields of a record, following the value and operat
 | `value?`         | `T`                                                           | The record (controlled)                                                                      |
 | `defaultValue?`  | `T`                                                           | The initial record (uncontrolled). When both this and `value` are omitted, `{}`              |
 | `onValueChange?` | `(value: T, details: RecordFieldsValueChangeDetails) => void` | Called when the value of a field is committed, with the changed record and the changed field |
+| `partsProps?`    | `{ field?; label?; value? }`                                  | Props passed to the field, label, and value elements (see `withRecordFields`)                |
 
 - It places a `<div>` per field inside a `<div>`. Each field holds a `<div>` for the label and a `<div>` for the value.
 - When the value of a field is committed, it creates a new record with that key changed and calls `onValueChange(next, { type: 'update', path: [key] })`. It does not report when the value has not changed.
 - It gives each label an id and passes it to `renderValue` as `aria-labelledby`. The value components are named by their field labels.
 - To connect it to a state-model record, pass the `value` and `onValueChange` of `useModelProps(record)`.
 - Because it has several inputs, its primary element is the root. Other props (`className`, `role`, `aria-label`, `ref`, and so on) are passed to the root `<div>`.
+
+#### `withRecordFields`
+
+```ts
+withRecordFields<P extends RecordFieldsParts>(parts?: P): <T extends object>(props: RecordFieldsProps<T, P>) => ReactElement
+```
+
+Creates a component that lays out the fields of a record, drawn with the given parts. `RecordFields` is the one created without any parts.
+
+| Part         | Type          | Description                                                                                                                                                                            |
+| ------------ | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Container?` | `ElementType` | The container that lays out the fields. Defaults to `<div>`. Passes the props it receives (`role`, `aria-*`, `children`, and so on) to its element                                     |
+| `Field?`     | `ElementType` | A field (wraps the label and the value). Defaults to `<div>`. Passes the props it receives (`children` and so on) to its element                                                       |
+| `Label?`     | `ElementType` | The label of a field. Defaults to `<div>`. Passes the props it receives (the `id` the component sets, `children`, and so on) to its element (without the `id`, the value is not named) |
+| `Value?`     | `ElementType` | Wraps the value of a field (what `renderValue` drew). Defaults to `<div>`. Passes the props it receives (`children` and so on) to its element                                          |
+
+- The created component takes the same props as `RecordFields`.
+- The props of the given parts become the types of the created component. The remaining root props are the props of `Container`, and `partsProps.field`, `partsProps.label`, and `partsProps.value` are the props of each part without `children`. When a part has required props, `partsProps` becomes required too.
+- `partsProps.field`, `partsProps.label`, and `partsProps.value` take a value (the same for every field) or a function (decided per field). The function receives `RecordFieldContext<T>` (the second argument of `renderValue` plus the field's `key`).
+- The component sets an `id` on each label and merges `partsProps.label` over it.
+- When you give layout parts (such as ones created with react-layouts HOCs), you can pass their layout options through `partsProps` and other props, with types.
+
+```tsx
+// Create it once in your app
+const AppRecordFields = withRecordFields({ Field: AppField, Label: AppLabel });
+
+// Place it as is on a screen. Decide the props per field with a function
+<AppRecordFields
+  value={member}
+  onValueChange={setMember}
+  fields={fields}
+  partsProps={{ field: ({ key }) => ({ className: `field-${key}` }) }}
+/>;
+```
 
 #### `useRecordFields`
 
@@ -827,10 +942,47 @@ const { displayFields } = useRecordFields({ value, onValueChange, fields });
 
 ### table
 
-| Name              | Description                                                                                                 |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- |
-| `Table`           | A table that follows the value and operation contract                                                       |
-| `useTable(props)` | Handles the behavior of a table (expanding into headers, rows, and cells, and changing cells) (headless UI) |
+| Name                | Description                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `TableColumn<R>`    | The type of a table column (a field plus alignment and props for the header and the cells)                  |
+| `Table`             | A table that follows the value and operation contract                                                       |
+| `withTable(parts?)` | Creates a table drawn with the given parts                                                                  |
+| `useTable(props)`   | Handles the behavior of a table (expanding into headers, rows, and cells, and changing cells) (headless UI) |
+
+#### `TableColumn<R>`
+
+```ts
+type TableColumn<R> = RecordField<R> & {
+  align?: TableAlign;
+  headerAlign?: TableAlign;
+  headerProps?: TableHeaderCellProps;
+  cellProps?:
+    | TableCellElementProps
+    | ((context: TableCellContext<R, R[key]>) => TableCellElementProps);
+};
+```
+
+A column of a table. It is a field (`RecordField<R>`) plus settings specific to columns, so an array of fields can be passed to `columns` as is. Because it is a union per key, the type of the value `renderValue` and `cellProps` receive is narrowed by `key`.
+
+| Property       | Type                                                                                    | Description                                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `align?`       | `'start' \| 'center' \| 'end'`                                                          | The text alignment of the cells (`text-align`). When omitted, it is not set (left to CSS)                        |
+| `headerAlign?` | `'start' \| 'center' \| 'end'`                                                          | The text alignment of the header. Defaults to `align`                                                            |
+| `headerProps?` | `TableHeaderCellProps`                                                                  | Props passed to the column header (`<th>`)                                                                       |
+| `cellProps?`   | `TableCellElementProps \| ((context: TableCellContext<R, V>) => TableCellElementProps)` | Props passed to the cells of the column (`<td>`). A function decides them per cell from the value, path, and row |
+
+`TableCellContext<R, V>`, which the `cellProps` function receives, is the second argument of `renderValue` (`path` and `record`) plus the value of the cell (`value`).
+
+```tsx
+const columns: TableColumn<Member>[] = [
+  {
+    key: 'age',
+    label: 'Age',
+    align: 'end',
+    cellProps: ({ value }) => ({ className: value < 20 ? 'minor' : undefined }),
+  },
+];
+```
 
 #### `Table`
 
@@ -849,21 +1001,77 @@ const columns: TableColumn<Member>[] = [
 <Table value={members} onValueChange={setMembers} columns={columns} />;
 ```
 
-A table that follows the value and operation contract. It takes an array of rows as `value`, and when the value of a cell is committed, reports the changed array through `onValueChange`. It draws a `<table>`, with column headers in `<th scope="col">` and cells in `<td>`.
+A table that follows the value and operation contract. It takes an array of rows as `value`, and when the value of a cell is committed, reports the changed array through `onValueChange`. It draws a `<table>`, with column headers in `<th scope="col">` and cells in `<td>`. It is created by `withTable` without any parts.
 
-| Property         | Type                                                     | Description                                                                               |
-| ---------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `columns`        | `readonly TableColumn<R>[]`                              | The columns                                                                               |
-| `value?`         | `readonly R[]`                                           | The array of rows (controlled)                                                            |
-| `defaultValue?`  | `readonly R[]`                                           | The initial array of rows (uncontrolled). Defaults to an empty array                      |
-| `onValueChange?` | `(value: R[], details: TableValueChangeDetails) => void` | Called when the value of a cell is committed, with the changed array and the changed cell |
+| Property         | Type                                                                        | Description                                                                               |
+| ---------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `columns`        | `readonly TableColumn<R>[]`                                                 | The columns                                                                               |
+| `value?`         | `readonly R[]`                                                              | The array of rows (controlled)                                                            |
+| `defaultValue?`  | `readonly R[]`                                                              | The initial array of rows (uncontrolled). Defaults to an empty array                      |
+| `onValueChange?` | `(value: R[], details: TableValueChangeDetails) => void`                    | Called when the value of a cell is committed, with the changed array and the changed cell |
+| `renderRow?`     | `(props: TableRenderRowProps<P>, context: TableRowContext<R>) => ReactNode` | Draws a row. When omitted, rows are drawn with `<tr>` (the `Row` given to `withTable`)    |
+| `partsProps?`    | `{ head?; headerRow?; headerCell?; body?; row?; cell? }`                    | Props passed to the elements inside the table (see `withTable`)                           |
 
 - A row is an object with `id` (`R extends { id: string | number }`). Rows are identified by `id` (the same as the default of a state-model list).
 - When the value of a cell is committed, it finds the row by `id`, creates a new array with that key changed, and calls `onValueChange(next, { type: 'update', path: [id, key] })`. The `id` is converted to a string. Unchanged rows keep their original objects.
 - It does not report when the value has not changed. When several rows have the same `id`, only the first one is changed.
 - It gives each column header an id and passes it to `renderValue` as `aria-labelledby`. Inputs in the cells are named by their column headers.
+- Each header `<th>` gets `id`, `scope="col"`, and the alignment style with the column's `headerProps` merged over them, and each `<td>` gets the alignment style with the column's `cellProps` merged over it.
+- Rows are drawn with a `memo` component. A row is not redrawn while its object, `columns`, `partsProps.row`, `partsProps.cell`, and `renderRow` stay the same (state-model and `update` of utils keep the objects of unchanged rows). Passing a new function or object on every render redraws every row.
 - To connect it to a state-model list, pass the `value` and `onValueChange` of `useModelProps(list)`.
 - Other props (`className`, `aria-label`, `ref`, and so on) are passed to the `<table>`.
+
+Use `renderRow` to draw the `<tr>` of a row yourself. `props` is what `partsProps.row` decided plus the cells (`children`); spread it onto the `<tr>`. `context` (`TableRowContext<R>`) is `{ path: [row id], index, record }`, and `path` can be used to read state-model change status or validation results (`status.dirty(path)`). It is called as a plain function, so to use hooks in it, return a component.
+
+```tsx
+// Use a hook inside to mark edited rows
+const renderRow = (
+  props: TableRenderRowProps,
+  { path }: TableRowContext<Member>,
+) => <DirtyRow {...props} path={path} />;
+
+<Table value={members} columns={columns} renderRow={renderRow} />;
+```
+
+#### `withTable`
+
+```ts
+withTable<P extends TableParts>(parts?: P): <R extends { id: string | number }>(props: TableProps<R, P>) => ReactElement
+```
+
+Creates a table drawn with the given parts. `Table` is the one created without any parts. Give the parts once in your app, and decide how each row, column, and cell is drawn with `partsProps`, `renderRow`, and the columns' `headerProps` and `cellProps`.
+
+| Part          | Type          | Description                                      |
+| ------------- | ------------- | ------------------------------------------------ |
+| `Table?`      | `ElementType` | Draws the `<table>`. Defaults to `<table>`       |
+| `Head?`       | `ElementType` | Draws the `<thead>`. Defaults to `<thead>`       |
+| `HeaderRow?`  | `ElementType` | Draws the header `<tr>`. Defaults to `<tr>`      |
+| `HeaderCell?` | `ElementType` | Draws a column header `<th>`. Defaults to `<th>` |
+| `Body?`       | `ElementType` | Draws the `<tbody>`. Defaults to `<tbody>`       |
+| `Row?`        | `ElementType` | Draws a data `<tr>`. Defaults to `<tr>`          |
+| `Cell?`       | `ElementType` | Draws a cell `<td>`. Defaults to `<td>`          |
+
+- The parts receive only element props and `children` (no row or cell data). They need to pass the props they receive (`id`, `scope`, `children`, and so on) to their elements.
+- The created component takes the same props as `Table`.
+- The props of the given parts become the types of the created component. The remaining root props are the props of the `Table` part, and `partsProps.head`, `headerRow`, `headerCell`, `body`, `row`, and `cell` are the props of each part without `children`. When a part has required props, `partsProps` becomes required too.
+- `partsProps.headerCell`, `partsProps.row`, and `partsProps.cell` take a value (the same for all) or a function. The function receives `TableHeaderCellContext<R>` (`{ key, index }`) for headers, `TableRowContext<R>` (`{ path, index, record }`) for rows, and `TableCellContext<R>` (`{ path, record, value }`) for cells. The functions are called while drawing, so hooks cannot be used in them.
+- For headers and cells, the columns' `headerProps` and `cellProps` are merged over `partsProps.headerCell` and `partsProps.cell` (the column's value wins for the same prop; `className`, `style`, event handlers, and `ref` are combined).
+
+```tsx
+// Create it once in your app
+const AppTable = withTable({ Row: AppRow, Cell: AppCell });
+
+// Place it as is on a screen. Decide the props per row with a function
+<AppTable
+  value={members}
+  columns={columns}
+  partsProps={{
+    row: ({ record }) => ({
+      className: record.active ? undefined : 'inactive',
+    }),
+  }}
+/>;
+```
 
 #### `useTable`
 
@@ -874,7 +1082,11 @@ useTable<R extends { id: string | number }>(props: UseTableProps<R>): UseTableRe
 Handles the behavior of a table. It returns the column headers, rows, and cells already expanded, so elements other than `<table>` (CSS Grid, virtual scrolling, and so on) can use the same change handling and header association. It takes the same `columns`, `value`, `defaultValue`, and `onValueChange` as `Table`.
 
 ```tsx
-const { displayColumns, rows } = useTable({ value, onValueChange, columns });
+const { displayColumns, rows, getCells } = useTable({
+  value,
+  onValueChange,
+  columns,
+});
 
 <div className="my-grid">
   {displayColumns.map((column) => (
@@ -883,7 +1095,7 @@ const { displayColumns, rows } = useTable({ value, onValueChange, columns });
     </div>
   ))}
   {rows.map((row) =>
-    row.cells.map((cell) => (
+    getCells(row).map((cell) => (
       <div key={`${row.id}:${cell.labelId}`}>{cell.content}</div>
     )),
   )}
@@ -892,134 +1104,162 @@ const { displayColumns, rows } = useTable({ value, onValueChange, columns });
 
 - There is one `labelId` per column. Put it on exactly one element, the column header (layouts that draw a label in every row would repeat the same id).
 
-| Result           | Type                      | Description                                                               |
-| ---------------- | ------------------------- | ------------------------------------------------------------------------- |
-| `value`          | `readonly R[]`            | The array of rows                                                         |
-| `displayColumns` | `DisplayTableColumn<R>[]` | The columns to display (each column with `labelId`, the id of its header) |
-| `rows`           | `TableRow<R>[]`           | The rows to display (in the order of `value`)                             |
+| Result           | Type                                   | Description                                                                                                            |
+| ---------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `value`          | `readonly R[]`                         | The array of rows                                                                                                      |
+| `displayColumns` | `DisplayTableColumn<R>[]`              | The columns to display (each column with `labelId`, the id of its header, and `thProps`, the props for its `<th>`)     |
+| `rows`           | `TableRow<R>[]`                        | The rows to display (in the order of `value`). Create their cells with `getCells`                                      |
+| `getCells`       | `(row: TableRow<R>) => TableCell<R>[]` | Creates the cells of a row (in column order). It stays the same while the columns do, so a row component can be `memo` |
 
-An element of `rows` (`TableRow<R>`) is `{ id, cells }`. `id` is the row's id converted to a string, usable as a React key. An element of `cells` (`TableCell<R>`) has the following.
+An element of `rows` (`TableRow<R>`) is `{ id, index, record }`. `id` is the row's id converted to a string, usable as a React key; `index` is its position in `value`, and `record` is the original row. A cell returned by `getCells` (`TableCell<R>`) has the following.
 
-| Property  | Type                                   | Description                                                                       |
-| --------- | -------------------------------------- | --------------------------------------------------------------------------------- |
-| `key`     | `keyof R & string`                     | The key of the column                                                             |
-| `labelId` | `string`                               | The id of the column header element                                               |
-| `content` | `ReactNode`                            | What the column's `renderValue` drew (for a column without it, the value as text) |
-| `props`   | `FieldValueProps<R[keyof R & string]>` | The props passed to `renderValue`. Use them to draw the cell yourself             |
-| `context` | `FieldValueContext`                    | The second argument passed to `renderValue` (`path` is `[row id, key]`)           |
+| Property  | Type                                   | Description                                                                                        |
+| --------- | -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `key`     | `keyof R & string`                     | The key of the column                                                                              |
+| `labelId` | `string`                               | The id of the column header element                                                                |
+| `content` | `ReactNode`                            | What the column's `renderValue` drew (for a column without it, the value as text)                  |
+| `props`   | `FieldValueProps<R[keyof R & string]>` | The props passed to `renderValue`. Use them to draw the cell yourself                              |
+| `context` | `FieldValueContext<R>`                 | The second argument passed to `renderValue` (`path` is `[row id, key]`, `record` is the row)       |
+| `tdProps` | `TableCellElementProps`                | The props for the cell's `<td>` (the alignment style with the column's `cellProps` merged over it) |
 
 ### Types
 
 The types of the value and operation contract, such as `Option<V>`, `DisplayOption<V>`, and `UnlistedPlacementProps`, are in [`@fringeworks/react-contract`](https://github.com/fringeworks-js/react-contract).
 
-| Type                              | Description                                                                                       |
-| --------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `CheckboxProps<P>`                | The props of the component created by `withCheckbox` (`Checkbox`). `P` is the given parts         |
-| `CheckboxParts`                   | The parts for `withCheckbox`                                                                      |
-| `CheckboxLabelSlotProps`          | The props the `<label>` part of `withCheckbox` receives                                           |
-| `CheckboxInputSlotProps`          | The props the `<input>` part of `withCheckbox` receives                                           |
-| `CheckboxPartsProps<P>`           | The props passed to the parts with `partsProps`                                                   |
-| `CheckboxSlots`                   | The parts and the props passed to each                                                            |
-| `UseCheckboxProps`                | The props `useCheckbox` takes                                                                     |
-| `UseCheckboxResult`               | The result of `useCheckbox`                                                                       |
-| `CheckboxInputProps`              | The props `getInputProps` of `useCheckbox` creates                                                |
-| `UseCheckboxGroupProps<V>`        | The props `useCheckboxGroup` takes                                                                |
-| `UseCheckboxGroupResult<V>`       | The result of `useCheckboxGroup`                                                                  |
-| `SelectAllState`                  | The state of "select all"                                                                         |
-| `CheckboxSlotProps`               | The props a checkbox in a checkbox group receives                                                 |
-| `CheckboxGroupContainerProps`     | The attributes for the container                                                                  |
-| `CheckboxGroupContainerSlotProps` | The props the container part of a checkbox group receives                                         |
-| `CheckboxGroupParts`              | The parts passed to `withCheckboxGroup`                                                           |
-| `CheckboxGroupProps<V, P>`        | The props of the component created by `withCheckboxGroup` (`P` is the given parts)                |
-| `CheckboxGroupPartsProps<V, P>`   | The props passed to the parts with `partsProps`                                                   |
-| `CheckboxGroupSlots`              | The parts and the props the group passes to each                                                  |
-| `DefaultCheckboxGroupParts`       | The default type argument of `CheckboxGroupProps`                                                 |
-| `RadioProps<P>`                   | The props of the component created by `withRadio` (`Radio`). `P` is the given parts               |
-| `RadioParts`                      | The parts for `withRadio`                                                                         |
-| `RadioLabelSlotProps`             | The props the `<label>` part of `withRadio` receives                                              |
-| `RadioInputSlotProps`             | The props the `<input>` part of `withRadio` receives                                              |
-| `RadioPartsProps<P>`              | The props passed to the parts with `partsProps`                                                   |
-| `RadioSlots`                      | The parts and the props passed to each                                                            |
-| `UseRadioProps`                   | The props `useRadio` takes                                                                        |
-| `UseRadioResult`                  | The result of `useRadio`                                                                          |
-| `RadioInputProps`                 | The props `getInputProps` of `useRadio` creates                                                   |
-| `SwitchProps<P>`                  | The props of the component created by `withSwitch` (`Switch`). `P` is the given parts             |
-| `SwitchParts`                     | The parts for `withSwitch`                                                                        |
-| `SwitchLabelSlotProps`            | The props the `<label>` part of `withSwitch` receives                                             |
-| `SwitchInputSlotProps`            | The props the `<input>` part of `withSwitch` receives                                             |
-| `SwitchPartsProps<P>`             | The props passed to the parts with `partsProps`                                                   |
-| `SwitchSlots`                     | The parts and the props passed to each                                                            |
-| `UseRadioGroupProps<V>`           | The props `useRadioGroup` takes                                                                   |
-| `UseRadioGroupResult<V>`          | The result of `useRadioGroup`                                                                     |
-| `RadioSlotProps`                  | The props a radio button in a radio group receives                                                |
-| `RadioGroupContainerProps`        | The attributes for the container                                                                  |
-| `RadioGroupContainerSlotProps`    | The props the container part of a radio group receives                                            |
-| `RadioGroupParts`                 | The parts passed to `withRadioGroup`                                                              |
-| `RadioGroupProps<V, P>`           | The props of the component created by `withRadioGroup` (`P` is the given parts)                   |
-| `RadioGroupPartsProps<V, P>`      | The props passed to the parts with `partsProps`                                                   |
-| `RadioGroupSlots`                 | The parts and the props the group passes to each                                                  |
-| `DefaultRadioGroupParts`          | The default type argument of `RadioGroupProps`                                                    |
-| `OptionLabelProps<V, P>`          | The props of the component created by `withOptionLabel` (`OptionLabel`). `P` is the given parts   |
-| `OptionLabelParts`                | The parts for `withOptionLabel`                                                                   |
-| `OptionLabelContainerSlotProps`   | The props the container part of `withOptionLabel` receives                                        |
-| `OptionLabelSlots`                | The parts and the props passed to each                                                            |
-| `OptionLabelsProps<V, P>`         | The props of the component created by `withOptionLabels` (`OptionLabels`). `P` is the given parts |
-| `OptionLabelsParts`               | The parts for `withOptionLabels`                                                                  |
-| `OptionLabelsContainerSlotProps`  | The props the container part of `withOptionLabels` receives                                       |
-| `OptionLabelsSlots`               | The parts and the props passed to each                                                            |
-| `OptionLabelsLabelSlotProps`      | The props the label part of `withOptionLabels` receives                                           |
-| `OptionLabelsPartsProps<V, P>`    | The props passed to the parts with `partsProps`                                                   |
-| `ButtonProps<V, P>`               | The props of the component created by `withButton` (`Button`). `P` is the given parts             |
-| `ButtonParts`                     | The parts for `withButton`                                                                        |
-| `ButtonButtonSlotProps`           | The props the part of `withButton` receives                                                       |
-| `ButtonSlots`                     | The parts and the props passed to each                                                            |
-| `UseButtonGroupProps<V>`          | The props `useButtonGroup` takes                                                                  |
-| `UseButtonGroupResult<V>`         | The result of `useButtonGroup`                                                                    |
-| `ButtonSlotProps`                 | The props a button in a button group receives                                                     |
-| `ButtonGroupContainerProps`       | The attributes for the container                                                                  |
-| `ButtonGroupContainerSlotProps`   | The props the container part of a button group receives                                           |
-| `ButtonGroupParts`                | The parts passed to `withButtonGroup`                                                             |
-| `ButtonGroupProps<V, P>`          | The props of the component created by `withButtonGroup` (`P` is the given parts)                  |
-| `ButtonGroupPartsProps<V, P>`     | The props passed to the parts with `partsProps`                                                   |
-| `ButtonGroupSlots`                | The parts and the props the group passes to each                                                  |
-| `DefaultButtonGroupParts`         | The default type argument of `ButtonGroupProps`                                                   |
-| `TextInputProps<P>`               | The props of the component created by `withTextInput` (`TextInput`). `P` is the given parts       |
-| `TextInputParts`                  | The parts for `withTextInput`                                                                     |
-| `TextInputInputSlotProps`         | The props the part of `withTextInput` receives                                                    |
-| `TextInputSlots`                  | The parts and the props passed to each                                                            |
-| `TextInputType`                   | The `type` values `TextInput` accepts                                                             |
-| `UseTextInputProps`               | The props `useTextInput` takes                                                                    |
-| `UseTextInputResult`              | The result of `useTextInput`                                                                      |
-| `ValueChangeTiming`               | When to call `onValueChange`                                                                      |
-| `TextInputHandlers`               | Your handlers passed to `getInputProps`                                                           |
-| `TextInputElementProps`           | The props for the `<input>` created by `getInputProps`                                            |
-| `CollapsibleProps<P>`             | The props of the component created by `withCollapsible` (`Collapsible`). `P` is the given parts   |
-| `CollapsibleParts`                | The parts for `withCollapsible`                                                                   |
-| `CollapsibleDetailsSlotProps`     | The props the `<details>` part of `withCollapsible` receives                                      |
-| `CollapsibleSummarySlotProps`     | The props the `<summary>` part of `withCollapsible` receives                                      |
-| `CollapsiblePartsProps<P>`        | The props passed to the parts with `partsProps`                                                   |
-| `CollapsibleSlots`                | The parts and the props passed to each                                                            |
-| `UseCollapsibleProps`             | The props `useCollapsible` takes                                                                  |
-| `UseCollapsibleResult`            | The result of `useCollapsible`                                                                    |
-| `CollapsibleDetailsProps`         | The props for the `<details>`                                                                     |
-| `CollapsibleSummaryProps`         | The props for the `<summary>`                                                                     |
-| `RecordField<T>`                  | A field of a record                                                                               |
-| `FieldValueProps<V>`              | The props passed to the function that draws a field's value (`renderValue`)                       |
-| `FieldValueContext`               | The second argument passed to `renderValue` (`path`)                                              |
-| `TableColumn<R>`                  | A column of a table (currently the same shape as `RecordField<R>`)                                |
-| `TableRowId`                      | The type of a table row's id (`string \| number`)                                                 |
-| `TableProps<R>`                   | The props of `Table`                                                                              |
-| `UseTableProps<R>`                | The props `useTable` takes                                                                        |
-| `UseTableResult<R>`               | The result of `useTable`                                                                          |
-| `TableValueChangeDetails`         | The details when the value of a table changes (`{ type: 'update', path: [id, key] }`)             |
-| `DisplayTableColumn<R>`           | A column to display                                                                               |
-| `TableRow<R>`                     | A row to display                                                                                  |
-| `TableCell<R>`                    | A cell to display                                                                                 |
-| `RecordFieldsProps<T>`            | The props of `RecordFields`                                                                       |
-| `UseRecordFieldsProps<T>`         | The props `useRecordFields` takes                                                                 |
-| `UseRecordFieldsResult<T>`        | The result of `useRecordFields`                                                                   |
-| `RecordFieldsValueChangeDetails`  | The details when the value of a record changes (`{ type: 'update', path: [key] }`)                |
-| `DisplayRecordField<T>`           | A field to display                                                                                |
+| Type                              | Description                                                                                        |
+| --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `CheckboxProps<P>`                | The props of the component created by `withCheckbox` (`Checkbox`). `P` is the given parts          |
+| `CheckboxParts`                   | The parts for `withCheckbox`                                                                       |
+| `CheckboxLabelSlotProps`          | The props the `<label>` part of `withCheckbox` receives                                            |
+| `CheckboxInputSlotProps`          | The props the `<input>` part of `withCheckbox` receives                                            |
+| `CheckboxPartsProps<P>`           | The props passed to the parts with `partsProps`                                                    |
+| `CheckboxSlots`                   | The parts and the props passed to each                                                             |
+| `CheckboxIndicatorSlotProps`      | The props the indicator part (`Indicator`) of `withCheckbox` receives                              |
+| `UseCheckboxProps`                | The props `useCheckbox` takes                                                                      |
+| `UseCheckboxResult`               | The result of `useCheckbox`                                                                        |
+| `CheckboxInputProps`              | The props `getInputProps` of `useCheckbox` creates                                                 |
+| `UseCheckboxGroupProps<V>`        | The props `useCheckboxGroup` takes                                                                 |
+| `UseCheckboxGroupResult<V>`       | The result of `useCheckboxGroup`                                                                   |
+| `SelectAllState`                  | The state of "select all"                                                                          |
+| `CheckboxSlotProps`               | The props a checkbox in a checkbox group receives                                                  |
+| `CheckboxGroupContainerProps`     | The attributes for the container                                                                   |
+| `CheckboxGroupContainerSlotProps` | The props the container part of a checkbox group receives                                          |
+| `CheckboxGroupParts`              | The parts passed to `withCheckboxGroup`                                                            |
+| `CheckboxGroupProps<V, P>`        | The props of the component created by `withCheckboxGroup` (`P` is the given parts)                 |
+| `CheckboxGroupPartsProps<V, P>`   | The props passed to the parts with `partsProps`                                                    |
+| `CheckboxGroupSlots`              | The parts and the props the group passes to each                                                   |
+| `RadioProps<P>`                   | The props of the component created by `withRadio` (`Radio`). `P` is the given parts                |
+| `RadioParts`                      | The parts for `withRadio`                                                                          |
+| `RadioLabelSlotProps`             | The props the `<label>` part of `withRadio` receives                                               |
+| `RadioInputSlotProps`             | The props the `<input>` part of `withRadio` receives                                               |
+| `RadioPartsProps<P>`              | The props passed to the parts with `partsProps`                                                    |
+| `RadioSlots`                      | The parts and the props passed to each                                                             |
+| `RadioIndicatorSlotProps`         | The props the indicator part (`Indicator`) of `withRadio` receives                                 |
+| `UseRadioProps`                   | The props `useRadio` takes                                                                         |
+| `UseRadioResult`                  | The result of `useRadio`                                                                           |
+| `RadioInputProps`                 | The props `getInputProps` of `useRadio` creates                                                    |
+| `SwitchProps<P>`                  | The props of the component created by `withSwitch` (`Switch`). `P` is the given parts              |
+| `SwitchParts`                     | The parts for `withSwitch`                                                                         |
+| `SwitchLabelSlotProps`            | The props the `<label>` part of `withSwitch` receives                                              |
+| `SwitchInputSlotProps`            | The props the `<input>` part of `withSwitch` receives                                              |
+| `SwitchPartsProps<P>`             | The props passed to the parts with `partsProps`                                                    |
+| `SwitchSlots`                     | The parts and the props passed to each                                                             |
+| `SwitchIndicatorSlotProps`        | The props the indicator part (`Indicator`) of `withSwitch` receives                                |
+| `UseRadioGroupProps<V>`           | The props `useRadioGroup` takes                                                                    |
+| `UseRadioGroupResult<V>`          | The result of `useRadioGroup`                                                                      |
+| `RadioSlotProps`                  | The props a radio button in a radio group receives                                                 |
+| `RadioGroupContainerProps`        | The attributes for the container                                                                   |
+| `RadioGroupContainerSlotProps`    | The props the container part of a radio group receives                                             |
+| `RadioGroupParts`                 | The parts passed to `withRadioGroup`                                                               |
+| `RadioGroupProps<V, P>`           | The props of the component created by `withRadioGroup` (`P` is the given parts)                    |
+| `RadioGroupPartsProps<V, P>`      | The props passed to the parts with `partsProps`                                                    |
+| `RadioGroupSlots`                 | The parts and the props the group passes to each                                                   |
+| `OptionLabelProps<V, P>`          | The props of the component created by `withOptionLabel` (`OptionLabel`). `P` is the given parts    |
+| `OptionLabelParts`                | The parts for `withOptionLabel`                                                                    |
+| `OptionLabelContainerSlotProps`   | The props the container part of `withOptionLabel` receives                                         |
+| `OptionLabelSlots`                | The parts and the props passed to each                                                             |
+| `OptionLabelsProps<V, P>`         | The props of the component created by `withOptionLabels` (`OptionLabels`). `P` is the given parts  |
+| `OptionLabelsParts`               | The parts for `withOptionLabels`                                                                   |
+| `OptionLabelsContainerSlotProps`  | The props the container part of `withOptionLabels` receives                                        |
+| `OptionLabelsSlots`               | The parts and the props passed to each                                                             |
+| `OptionLabelsLabelSlotProps`      | The props the label part of `withOptionLabels` receives                                            |
+| `OptionLabelsPartsProps<V, P>`    | The props passed to the parts with `partsProps`                                                    |
+| `ButtonProps<V, P>`               | The props of the component created by `withButton` (`Button`). `P` is the given parts              |
+| `ButtonParts`                     | The parts for `withButton`                                                                         |
+| `ButtonButtonSlotProps`           | The props the part of `withButton` receives                                                        |
+| `ButtonSlots`                     | The parts and the props passed to each                                                             |
+| `UseButtonProps<V>`               | The props `useButton` takes                                                                        |
+| `UseButtonResult`                 | The result of `useButton`                                                                          |
+| `ButtonElementProps`              | The props `getButtonProps` of `useButton` creates                                                  |
+| `UseButtonGroupProps<V>`          | The props `useButtonGroup` takes                                                                   |
+| `UseButtonGroupResult<V>`         | The result of `useButtonGroup`                                                                     |
+| `ButtonSlotProps`                 | The props a button in a button group receives                                                      |
+| `ButtonGroupContainerProps`       | The attributes for the container                                                                   |
+| `ButtonGroupContainerSlotProps`   | The props the container part of a button group receives                                            |
+| `ButtonGroupParts`                | The parts passed to `withButtonGroup`                                                              |
+| `ButtonGroupProps<V, P>`          | The props of the component created by `withButtonGroup` (`P` is the given parts)                   |
+| `ButtonGroupPartsProps<V, P>`     | The props passed to the parts with `partsProps`                                                    |
+| `ButtonGroupSlots`                | The parts and the props the group passes to each                                                   |
+| `TextInputProps<P>`               | The props of the component created by `withTextInput` (`TextInput`). `P` is the given parts        |
+| `TextInputParts`                  | The parts for `withTextInput`                                                                      |
+| `TextInputInputSlotProps`         | The props the part of `withTextInput` receives                                                     |
+| `TextInputSlots`                  | The parts and the props passed to each                                                             |
+| `TextInputType`                   | The `type` values `TextInput` accepts                                                              |
+| `UseTextInputProps`               | The props `useTextInput` takes                                                                     |
+| `UseTextInputResult`              | The result of `useTextInput`                                                                       |
+| `ValueChangeTiming`               | When to call `onValueChange`                                                                       |
+| `TextInputHandlers`               | Your handlers passed to `getInputProps`                                                            |
+| `TextInputElementProps`           | The props for the `<input>` created by `getInputProps`                                             |
+| `CollapsibleProps<P>`             | The props of the component created by `withCollapsible` (`Collapsible`). `P` is the given parts    |
+| `CollapsibleParts`                | The parts for `withCollapsible`                                                                    |
+| `CollapsibleDetailsSlotProps`     | The props the `<details>` part of `withCollapsible` receives                                       |
+| `CollapsibleSummarySlotProps`     | The props the `<summary>` part of `withCollapsible` receives                                       |
+| `CollapsiblePartsProps<P>`        | The props passed to the parts with `partsProps`                                                    |
+| `CollapsibleSlots`                | The parts and the props passed to each                                                             |
+| `CollapsibleIndicatorSlotProps`   | The props the indicator part (`Indicator`) of `withCollapsible` receives                           |
+| `UseCollapsibleProps`             | The props `useCollapsible` takes                                                                   |
+| `UseCollapsibleResult`            | The result of `useCollapsible`                                                                     |
+| `CollapsibleDetailsProps`         | The props for the `<details>`                                                                      |
+| `CollapsibleSummaryProps`         | The props for the `<summary>`                                                                      |
+| `RecordField<T>`                  | A field of a record                                                                                |
+| `FieldValueProps<V>`              | The props passed to the function that draws a field's value (`renderValue`)                        |
+| `FieldValueContext<T>`            | The information passed to `renderValue` as its second argument (`path` and `record`)               |
+| `TableColumn<R>`                  | A table column (a field plus settings specific to columns)                                         |
+| `TableColumnOptions<R, V>`        | Settings specific to columns (`align`, `headerAlign`, `headerProps`, and `cellProps`)              |
+| `TableAlign`                      | The text alignment of a column (`'start' \| 'center' \| 'end'`)                                    |
+| `TableHeaderCellProps`            | Props passed to a column header (`<th>`)                                                           |
+| `TableCellElementProps`           | Props passed to a cell (`<td>`)                                                                    |
+| `TableCellContext<R, V>`          | The information passed to the functions of `cellProps` and `partsProps.cell`                       |
+| `TableHeaderCellContext<R>`       | The information passed to the function of `partsProps.headerCell`                                  |
+| `TableRowContext<R>`              | The information passed to the function of `partsProps.row` and to `renderRow`                      |
+| `TableRowId`                      | The type of a table row's id (`string \| number`)                                                  |
+| `TableProps<R, P>`                | The props of a component created with `withTable` (`Table`) (`P` is the given parts)               |
+| `TableParts`                      | The parts given to `withTable`                                                                     |
+| `TableSlotProps`                  | The props the `<table>` part given to `withTable` receives                                         |
+| `TableSectionSlotProps`           | The props the `<thead>` and `<tbody>` parts given to `withTable` receive                           |
+| `TableRowSlotProps`               | The props the `<tr>` parts given to `withTable` receive                                            |
+| `TableHeaderCellSlotProps`        | The props the `<th>` part given to `withTable` receives                                            |
+| `TableCellSlotProps`              | The props the `<td>` part given to `withTable` receives                                            |
+| `TablePartsProps<R, P>`           | The props passed to the parts through `partsProps`                                                 |
+| `TableSlots`                      | The mapping from part names to the props passed to them                                            |
+| `TableRenderRowProps<P>`          | The props passed to `renderRow` (what `partsProps.row` decided, plus the cells)                    |
+| `UseTableProps<R>`                | The props `useTable` takes                                                                         |
+| `UseTableResult<R>`               | The result of `useTable`                                                                           |
+| `TableValueChangeDetails`         | The details when the value of a table changes (`{ type: 'update', path: [id, key] }`)              |
+| `DisplayTableColumn<R>`           | A column to display                                                                                |
+| `TableRow<R>`                     | A row to display                                                                                   |
+| `TableCell<R>`                    | A cell to display                                                                                  |
+| `RecordFieldsProps<T, P>`         | The props of a component created with `withRecordFields` (`RecordFields`) (`P` is the given parts) |
+| `RecordFieldsParts`               | The parts given to `withRecordFields`                                                              |
+| `RecordFieldsContainerSlotProps`  | The props the container part given to `withRecordFields` receives                                  |
+| `RecordFieldPartSlotProps`        | The props the field, label, and value parts given to `withRecordFields` receive                    |
+| `RecordFieldsPartsProps<T, P>`    | The props passed to the parts through `partsProps`                                                 |
+| `RecordFieldsSlots`               | The mapping from part names to the props passed to them                                            |
+| `RecordFieldContext<T>`           | The information passed to the functions of `partsProps.field`, `label`, and `value`                |
+| `UseRecordFieldsProps<T>`         | The props `useRecordFields` takes                                                                  |
+| `UseRecordFieldsResult<T>`        | The result of `useRecordFields`                                                                    |
+| `RecordFieldsValueChangeDetails`  | The details when the value of a record changes (`{ type: 'update', path: [key] }`)                 |
+| `DisplayRecordField<T>`           | A field to display                                                                                 |
 
 ## License
 
